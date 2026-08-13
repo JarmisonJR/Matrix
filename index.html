@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEURAL OS // ULTIMATE POLYGLOT IDE v4.0</title>
+  <title>NEURAL OS // MATRIX CODE STUDIO v5.0</title>
   
   <!-- CDN Runtimes & Interpreters -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
@@ -19,6 +18,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-lua.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap');
@@ -29,8 +31,8 @@
       --primary-dim: #00b32d;
       --primary-dark: #003b0f;
       --bg-dark: #020804;
-      --window-bg: rgba(2, 12, 5, 0.96);
-      --border-color: rgba(0, 255, 65, 0.35);
+      --window-bg: rgba(2, 12, 5, 0.88);
+      --border-color: rgba(0, 255, 65, 0.45);
       --text-color: #00ff41;
     }
 
@@ -47,101 +49,121 @@
       color: var(--text-color);
     }
 
+    /* --- CHUVA MATRIX COM MAIOR VISIBILIDADE E EFEITO NEON --- */
     canvas#matrixCanvas {
-      display: block; position: absolute; top: 0; left: 0;
-      z-index: 1; opacity: 0.25;
+      display: block; 
+      position: absolute; 
+      top: 0; 
+      left: 0;
+      z-index: 1; 
+      opacity: 0.75; /* Aumentado para dar muito mais visibilidade */
+      filter: drop-shadow(0 0 6px rgba(0, 255, 65, 0.6)); /* Brilho neon nos caracteres */
     }
 
     .crt-overlay {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
       z-index: 2; pointer-events: none;
-      background: linear-gradient(rgba(0, 20, 5, 0) 50%, rgba(0, 0, 0, 0.5) 50%);
+      background: linear-gradient(rgba(0, 20, 5, 0) 50%, rgba(0, 0, 0, 0.35) 50%);
       background-size: 100% 4px;
-      box-shadow: inset 0 0 120px rgba(0, 255, 65, 0.15), inset 0 0 180px rgba(0, 0, 0, 0.95);
+      box-shadow: inset 0 0 100px rgba(0, 255, 65, 0.1), inset 0 0 140px rgba(0, 0, 0, 0.8);
     }
 
+    /* --- LAYOUT ESTILO VS CODE --- */
     .terminal-window {
       position: relative; z-index: 10;
-      width: 96vw; max-width: 1400px; height: 92vh;
+      width: 80vw; height: 80vh;
       background: var(--window-bg);
       border: 1px solid var(--border-color);
-      border-radius: 8px;
-      box-shadow: 0 0 40px rgba(0, 255, 65, 0.2), inset 0 0 20px rgba(0, 255, 65, 0.05);
-      backdrop-filter: blur(12px);
+      border-radius: 6px;
+      box-shadow: 0 0 40px rgba(0, 255, 65, 0.25);
+      backdrop-filter: blur(6px);
       display: flex; flex-direction: column; overflow: hidden;
     }
 
-    .terminal-header {
-      background: rgba(0, 255, 65, 0.06);
+    /* BARRA DE MENU SUPERIOR */
+    .menu-bar {
+      height: 34px; background: rgba(0, 255, 65, 0.08);
       border-bottom: 1px solid var(--border-color);
-      padding: 8px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 12px; font-size: 0.75rem; user-select: none;
+    }
+
+    .menu-items { display: flex; gap: 15px; }
+    .menu-item { cursor: pointer; color: var(--primary-dim); font-weight: 500; }
+    .menu-item:hover { color: var(--primary); text-shadow: 0 0 8px var(--primary-glow); }
+
+    /* LAYOUT PRINCIPAL: ACTIVITY BAR + SIDEBAR + WORKSPACE */
+    .vscode-body { display: flex; flex: 1; overflow: hidden; }
+
+    /* ACTIVITY BAR */
+    .activity-bar {
+      width: 48px; background: rgba(0, 5, 2, 0.92);
+      border-right: 1px solid rgba(0, 255, 65, 0.2);
+      display: flex; flex-direction: column; align-items: center; padding-top: 10px; gap: 18px;
+    }
+
+    .activity-icon {
+      font-size: 1.2rem; cursor: pointer; color: var(--primary-dim); opacity: 0.6; transition: 0.2s;
+    }
+
+    .activity-icon:hover, .activity-icon.active {
+      opacity: 1; color: var(--primary); text-shadow: 0 0 10px var(--primary);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 220px; background: rgba(0, 8, 3, 0.88);
+      border-right: 1px solid rgba(0, 255, 65, 0.2);
+      display: flex; flex-direction: column; font-size: 0.75rem;
+    }
+
+    .sidebar-header {
+      padding: 8px 10px; font-weight: bold; letter-spacing: 1px;
+      border-bottom: 1px solid rgba(0, 255, 65, 0.15);
       display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: wrap; gap: 10px;
     }
 
-    .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 8px; }
+    .sidebar-content { flex: 1; overflow-y: auto; padding: 5px; }
 
-    label { font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; color: var(--primary); }
-
-    select, button, input {
-      background: #000d03; border: 1px solid var(--primary); color: var(--primary);
-      font-family: 'Fira Code', monospace; padding: 4px 8px; border-radius: 4px;
-      outline: none; font-size: 0.75rem;
+    .file-item {
+      padding: 4px 8px; cursor: pointer; border-radius: 3px;
+      display: flex; align-items: center; gap: 6px; color: var(--primary-dim);
     }
 
-    select option { background: #020804; color: var(--primary); }
-
-    .btn-action {
-      cursor: pointer; transition: all 0.2s; font-weight: 600;
-      display: flex; align-items: center; gap: 4px; background: rgba(0, 255, 65, 0.05);
+    .file-item:hover, .file-item.active {
+      background: rgba(0, 255, 65, 0.15); color: var(--primary);
     }
 
-    .btn-action:hover {
-      background: var(--primary); color: #020804; box-shadow: 0 0 12px var(--primary-glow);
-    }
+    .sidebar-pane { display: none; }
+    .sidebar-pane.active { display: block; }
 
-    .btn-action.clear {
-      border-color: var(--primary-dim); color: var(--primary-dim); background: rgba(0, 255, 65, 0.02);
-    }
-    .btn-action.clear:hover {
-      background: var(--primary-dim); color: #020804; box-shadow: 0 0 10px var(--primary-dim);
-    }
+    /* EDITOR & PANEL AREA */
+    .main-workspace { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* --- TABS BAR --- */
     .tabs-bar {
-      display: flex; background: rgba(0, 5, 2, 0.8);
-      border-bottom: 1px solid rgba(0, 255, 65, 0.2); padding: 4px 8px 0 8px; gap: 4px;
+      display: flex; background: rgba(0, 5, 2, 0.85);
+      border-bottom: 1px solid rgba(0, 255, 65, 0.2); padding: 4px 8px 0 8px; gap: 4px; overflow-x: auto;
     }
 
     .tab {
       padding: 6px 12px; background: rgba(0, 255, 65, 0.04);
       border: 1px solid rgba(0, 255, 65, 0.2); border-bottom: none;
       border-radius: 4px 4px 0 0; font-size: 0.75rem; cursor: pointer; color: var(--primary-dim);
-      display: flex; align-items: center; gap: 8px;
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
     }
 
     .tab.active {
-      background: rgba(0, 255, 65, 0.15); color: var(--primary);
+      background: rgba(0, 255, 65, 0.18); color: var(--primary);
       border-color: var(--primary); font-weight: bold;
-      box-shadow: 0 -2px 8px rgba(0, 255, 65, 0.2);
     }
 
-    .tab-close { font-size: 0.65rem; padding: 1px 4px; border-radius: 50%; color: var(--primary-dim); }
+    .tab-close { font-size: 0.65rem; padding: 1px 4px; border-radius: 50%; }
     .tab-close:hover { background: var(--primary); color: #020804; }
 
-    /* --- WORKSPACE --- */
-    .terminal-body {
-      display: flex; flex: 1; padding: 10px; gap: 10px; overflow: hidden;
-    }
-
-    .editor-wrapper {
-      flex: 1.2; display: flex; position: relative;
-      background: rgba(0, 5, 2, 0.7); border: 1px solid rgba(0, 255, 65, 0.2);
-      border-radius: 4px; overflow: hidden;
-    }
+    .editor-pane { flex: 1; display: flex; position: relative; overflow: hidden; }
 
     .line-numbers {
-      width: 40px; padding: 10px 0; background: rgba(0, 0, 0, 0.5);
+      width: 45px; padding: 10px 0; background: rgba(0, 0, 0, 0.6);
       border-right: 1px solid rgba(0, 255, 65, 0.15); color: var(--primary-dark);
       font-size: 0.82rem; line-height: 1.5; text-align: right; padding-right: 8px; user-select: none;
     }
@@ -161,45 +183,73 @@
 
     pre#highlightArea { z-index: 1; pointer-events: none; background: transparent !important; }
 
-    /* UNIFICAÇÃO DE CORES DAS SINTAXES PRISM PARA TONS DE VERDE */
-    pre[class*="language-"] { color: var(--primary) !important; text-shadow: none !important; }
-    .token.comment, .token.prolog, .token.doctype, .token.cdata { color: rgba(0, 255, 65, 0.4) !important; font-style: italic; }
-    .token.punctuation { color: #00cc33 !important; }
-    .token.namespace { opacity: .7; }
-    .token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted { color: #66ff8c !important; }
-    .token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { color: #a3ffbd !important; }
-    .token.operator, .token.entity, .token.url, .language-css .token.string, .style .token.string { color: #00ff41 !important; }
-    .token.atrule, .token.attr-value, .token.keyword { color: #33ff66 !important; font-weight: bold; }
-    .token.function, .token.class-name { color: #b8ffcc !important; }
-    .token.regex, .token.important, .token.variable { color: #00e639 !important; }
-
-    /* --- CONSOLE OUTPUT --- */
-    .output-wrapper {
-      flex: 0.8; display: flex; flex-direction: column; position: relative; gap: 6px;
+    .minimap {
+      width: 70px; background: rgba(0, 4, 1, 0.85);
+      border-left: 1px solid rgba(0, 255, 65, 0.1);
+      font-size: 2px; line-height: 3px; padding: 4px;
+      overflow: hidden; user-select: none; opacity: 0.6;
     }
 
+    /* SINTAXE PRISM EM TONS DE VERDE */
+    pre[class*="language-"] { color: var(--primary) !important; text-shadow: none !important; }
+    .token.comment { color: rgba(0, 255, 65, 0.4) !important; font-style: italic; }
+    .token.punctuation { color: #00cc33 !important; }
+    .token.property, .token.number, .token.constant { color: #66ff8c !important; }
+    .token.string, .token.builtin { color: #a3ffbd !important; }
+    .token.operator, .token.keyword { color: #33ff66 !important; font-weight: bold; }
+    .token.function, .token.class-name { color: #b8ffcc !important; }
+
+    /* PAINEL INFERIOR */
+    .bottom-panel {
+      height: 200px; background: rgba(0, 4, 1, 0.95);
+      border-top: 1px solid rgba(0, 255, 65, 0.25);
+      display: flex; flex-direction: column;
+    }
+
+    .panel-tabs {
+      display: flex; background: rgba(0, 10, 4, 0.85);
+      border-bottom: 1px solid rgba(0, 255, 65, 0.15);
+      padding: 0 10px; font-size: 0.7rem; gap: 12px;
+    }
+
+    .panel-tab {
+      padding: 6px 0; cursor: pointer; color: var(--primary-dim); border-bottom: 2px solid transparent;
+    }
+
+    .panel-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: bold; }
+
     .console-output {
-      flex: 1; background: rgba(0, 4, 1, 0.95); border: 1px solid rgba(0, 255, 65, 0.25);
-      border-radius: 4px; padding: 10px; font-size: 0.8rem; overflow-y: auto;
+      flex: 1; padding: 8px 12px; font-size: 0.8rem; overflow-y: auto;
       display: flex; flex-direction: column; gap: 4px;
     }
 
     iframe#htmlPreview {
-      width: 100%; height: 100%; background: #020804;
-      border: 1px solid rgba(0, 255, 65, 0.4); border-radius: 4px; display: none;
+      width: 100%; height: 100%; background: #020804; border: none; display: none;
     }
 
     .repl-input-group {
       display: flex; gap: 6px; background: rgba(0, 4, 1, 0.9);
-      border: 1px solid rgba(0, 255, 65, 0.25); padding: 4px; border-radius: 4px;
+      border-top: 1px solid rgba(0, 255, 65, 0.15); padding: 4px 8px;
     }
 
-    .repl-input-group input { flex: 1; background: transparent; border: none; color: var(--primary); }
+    .repl-input-group input {
+      flex: 1; background: transparent; border: none; color: var(--primary);
+      font-family: 'Fira Code', monospace; font-size: 0.75rem; outline: none;
+    }
+
+    button, select {
+      background: #000d03; border: 1px solid var(--primary); color: var(--primary);
+      font-family: 'Fira Code', monospace; padding: 3px 8px; border-radius: 3px;
+      outline: none; font-size: 0.72rem; cursor: pointer;
+    }
+
+    button:hover { background: var(--primary); color: #020804; }
 
     .status-bar {
-      height: 24px; background: rgba(0, 255, 65, 0.05); border-top: 1px solid rgba(0, 255, 65, 0.2);
+      height: 22px; background: rgba(0, 255, 65, 0.08);
+      border-top: 1px solid rgba(0, 255, 65, 0.2);
       display: flex; justify-content: space-between; align-items: center;
-      padding: 0 12px; font-size: 0.7rem; color: rgba(0, 255, 65, 0.75);
+      padding: 0 12px; font-size: 0.68rem; color: rgba(0, 255, 65, 0.8);
     }
 
     .log-line { display: flex; gap: 8px; word-break: break-all; }
@@ -208,6 +258,11 @@
     .log-warn { color: #88ffaa; }
     .log-error { color: #55ff88; text-decoration: underline; }
     .log-return { color: #b3ffcc; font-style: italic; }
+
+    .search-box {
+      width: 100%; background: #000d03; border: 1px solid var(--primary-dim);
+      color: var(--primary); padding: 4px; margin-bottom: 8px; font-size: 0.75rem;
+    }
 
     .blink { animation: blink 1s infinite; }
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
@@ -218,92 +273,131 @@
   <div class="crt-overlay"></div>
 
   <div class="terminal-window">
-    <!-- HEADER & TOOLBAR -->
-    <div class="terminal-header">
-      <div class="toolbar-left">
-        <label for="langSelect">LINGUAGEM:</label>
-        <select id="langSelect">
-          <optgroup label="Web & Frontend">
-            <option value="javascript">JavaScript (ES6+)</option>
-            <option value="html">HTML5 / CSS3 Preview</option>
-            <option value="json">JSON Validator</option>
-            <option value="markdown">Markdown Preview</option>
-          </optgroup>
-          <optgroup label="Linguagens de Alto Desempenho">
-            <option value="python">Python 3.11 (Pyodide WASM)</option>
-            <option value="cpp">C / C++ (JSCPP Engine)</option>
-            <option value="csharp">C# (.NET Script Engine)</option>
-            <option value="java">Java (OOP Engine)</option>
-            <option value="php">PHP Engine</option>
-            <option value="lua">Lua 5.3 (Fengari VM)</option>
-            <option value="sql">SQL In-Memory</option>
-            <option value="bash">Bash / Shell CLI</option>
-          </optgroup>
-        </select>
-
-        <button class="btn-action" id="btnNewTab">+ Nova Aba</button>
+    <!-- MENU SUPERIOR -->
+    <div class="menu-bar">
+      <div class="menu-items">
+        <span class="menu-item" id="menuNewFile">Novo Arquivo</span>
+        <span class="menu-item" id="menuOpenFile">Abrir</span>
+        <span class="menu-item" id="menuSaveFile">Salvar</span>
+        <span class="menu-item" id="menuRun">&#9654; Executar (Ctrl+Enter)</span>
+        <span class="menu-item" id="menuClear">Limpar Console</span>
       </div>
-
-      <div class="toolbar-right">
-        <button class="btn-action" id="btnImport">Abrir</button>
-        <button class="btn-action" id="btnExport">Salvar</button>
-        <button class="btn-action clear" id="btnClear">Limpar</button>
-        <button class="btn-action" id="btnExecute">&#9654; EXECUTAR (Ctrl+Enter)</button>
-        <input type="file" id="fileInput" style="display: none;">
+      <div>
+        <label style="font-size: 0.7rem; font-weight: bold; margin-right: 4px;">LINGUAGEM:</label>
+        <select id="langSelect">
+          <option value="javascript">JavaScript (ES6+)</option>
+          <option value="html">HTML5 / Live Preview</option>
+          <option value="python">Python 3.11 (WASM)</option>
+          <option value="cpp">C / C++ Engine</option>
+          <option value="csharp">C# Script Engine</option>
+          <option value="lua">Lua 5.3 VM</option>
+          <option value="markdown">Markdown Preview</option>
+          <option value="json">JSON Config</option>
+        </select>
       </div>
     </div>
 
-    <!-- TABS SYSTEM -->
-    <div class="tabs-bar" id="tabsBar"></div>
-
-    <!-- WORKSPACE BODY -->
-    <div class="terminal-body">
-      <div class="editor-wrapper">
-        <div class="line-numbers" id="lineNumbers">1</div>
-        <div class="editor-container">
-          <textarea id="codeEditor" spellcheck="false"></textarea>
-          <pre id="highlightArea"><code class="language-javascript" id="highlightCode"></code></pre>
-        </div>
+    <!-- CORPO VS CODE -->
+    <div class="vscode-body">
+      <!-- ACTIVITY BAR -->
+      <div class="activity-bar">
+        <div class="activity-icon active" data-pane="explorer" title="Explorador de Arquivos">&#128193;</div>
+        <div class="activity-icon" data-pane="search" title="Buscar no Codigo">&#128065;</div>
+        <div class="activity-icon" data-pane="snippets" title="Snippets & Modelos">&#9881;</div>
       </div>
 
-      <div class="output-wrapper">
-        <div class="console-output" id="consoleOutput">
-          <div style="font-size: 0.68rem; color: rgba(0, 255, 65, 0.4); margin-bottom: 4px;">// CONSOLE_OUTPUT_LOG</div>
-          <div id="logContent">
-            <div class="log-line log-info"><span class="log-prefix">></span> IDE Neural v4.0 Pronta para Execu&ccedil;&atilde;o.<span class="blink">_</span></div>
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <!-- PAINEL EXPLORER -->
+        <div class="sidebar-pane active" id="pane-explorer">
+          <div class="sidebar-header">
+            <span>EXPLORADOR</span>
+            <button id="btnSidebarNewFile">+</button>
+          </div>
+          <div class="sidebar-content" id="fileTree"></div>
+        </div>
+
+        <!-- PAINEL BUSCA -->
+        <div class="sidebar-pane" id="pane-search">
+          <div class="sidebar-header"><span>BUSCAR</span></div>
+          <div class="sidebar-content">
+            <input type="text" id="searchInput" class="search-box" placeholder="Localizar no arquivo...">
+            <div id="searchResults" style="font-size: 0.7rem; color: var(--primary-dim);"></div>
           </div>
         </div>
-        
-        <iframe id="htmlPreview"></iframe>
 
-        <!-- INTERACTIVE REPL INPUT -->
-        <div class="repl-input-group">
-          <span style="font-size: 0.75rem; color: var(--primary); align-self: center;">&gt;</span>
-          <input type="text" id="replInput" placeholder="Comando REPL r&aacute;pido (JS/Python)...">
-          <button class="btn-action" id="btnSendRepl">Enviar</button>
+        <!-- PAINEL SNIPPETS -->
+        <div class="sidebar-pane" id="pane-snippets">
+          <div class="sidebar-header"><span>SNIPPETS</span></div>
+          <div class="sidebar-content">
+            <div class="file-item" onclick="insertSnippet('fetch')">+ Fetch API Template</div>
+            <div class="file-item" onclick="insertSnippet('class')">+ ES6 Class Template</div>
+            <div class="file-item" onclick="insertSnippet('async')">+ Async/Await Pattern</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WORKSPACE -->
+      <div class="main-workspace">
+        <div class="tabs-bar" id="tabsBar"></div>
+
+        <div class="editor-pane">
+          <div class="line-numbers" id="lineNumbers">1</div>
+          <div class="editor-container">
+            <textarea id="codeEditor" spellcheck="false"></textarea>
+            <pre id="highlightArea"><code class="language-javascript" id="highlightCode"></code></pre>
+          </div>
+          <div class="minimap" id="minimap"></div>
+        </div>
+
+        <!-- PANEL INFERIOR -->
+        <div class="bottom-panel">
+          <div class="panel-tabs">
+            <span class="panel-tab active" id="tabTerminal">TERMINAL / CONSOLE</span>
+            <span class="panel-tab" id="tabOutput">PROBLEMAS (0)</span>
+          </div>
+
+          <div class="console-output" id="consoleOutput">
+            <div id="logContent">
+              <div class="log-line log-info"><span class="log-prefix">></span> Matrix Code Studio v5.0 Inicializado.<span class="blink">_</span></div>
+            </div>
+          </div>
+
+          <iframe id="htmlPreview"></iframe>
+
+          <div class="repl-input-group">
+            <span style="font-size: 0.75rem; color: var(--primary); align-self: center;">&gt;</span>
+            <input type="text" id="replInput" placeholder="Executar comando REPL instantaneo...">
+            <button id="btnSendRepl">Enviar</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- STATUS BAR FOOTER -->
+    <!-- STATUS BAR -->
     <div class="status-bar">
       <div id="statusInfo">Linha: 1 | Coluna: 1 | Caracteres: 0</div>
-      <div id="statusExecution">Tempo de Execu&ccedil;&atilde;o: 0ms</div>
-      <div>WASM_CORE: ACTIVE</div>
+      <div id="statusExecution">Tempo: 0ms</div>
+      <div>UTF-8 | WASM_CORE: READY</div>
     </div>
   </div>
 
   <canvas id="matrixCanvas"></canvas>
+  <input type="file" id="fileInput" style="display: none;">
 
   <script>
-    /* --- 1. MATRIX BACKGROUND ENGINE --- */
+    /* --- MATRIX BACKGROUND ENGINE (MELHORADA & MAIS VISÍVEL) --- */
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
-    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+
+    function resizeCanvas() { 
+      canvas.width = window.innerWidth; 
+      canvas.height = window.innerHeight; 
+    }
     resizeCanvas();
 
-    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ<>[]{}/*=+#';
-    const fontSize = 14;
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ<>[]{}/*=+#$@';
+    const fontSize = 15;
     let columns = Math.floor(canvas.width / fontSize);
     let drops = Array(columns).fill(0).map(() => Math.floor(Math.random() * -100));
 
@@ -314,106 +408,149 @@
     });
 
     function drawRain() {
-      ctx.fillStyle = 'rgba(2, 8, 4, 0.08)';
+      // Fundo semi-transparente mais leve para dar mais rastro e visibilidade
+      ctx.fillStyle = 'rgba(2, 8, 4, 0.12)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.font = fontSize + 'px "Fira Code", monospace';
+      ctx.font = 'bold ' + fontSize + 'px "Fira Code", monospace';
 
       for (let i = 0; i < drops.length; i++) {
         const text = chars.charAt(Math.floor(Math.random() * chars.length));
         const x = i * fontSize;
         const y = drops[i] * fontSize;
-        ctx.fillStyle = '#b8ffcc';
+
+        // Cabeça da gota (mais brilhante)
+        ctx.fillStyle = '#ffffff';
         ctx.fillText(text, x, y);
+
+        // Corpo da gota em verde Matrix vibrante
         ctx.fillStyle = '#00ff41';
         ctx.fillText(text, x, y - fontSize);
+
         if (y > canvas.height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
       }
     }
     setInterval(drawRain, 33);
 
-    /* --- 2. MULTI-TAB & STATE MANAGEMENT --- */
+    /* --- GERENCIAMENTO DE ARQUIVOS E SISTEMA DE ABAS --- */
     const codeTemplates = {
-      javascript: `// JavaScript ES6+ Environment\nasync function main() {\n  console.log("[+] Executando script JS...");\n  return "LOG_OK";\n}\nmain();`,
-      html: `<!-- HTML/CSS Live Render -->\n<style>\n  body { background: #020804; color: #00ff41; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }\n  .box { border: 1px solid #00ff41; padding: 20px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,255,65,0.3); }\n</style>\n<div class="box">\n  <h2>NEURAL OS UI</h2>\n  <p>Renderizacao de Frontend em Tempo Real</p>\n</div>`,
-      python: `# Python 3.11 WASM\ndef run():\n    print("[+] Executando em Python...")\n    return [x**2 for x in range(5)]\nrun()`,
-      cpp: `// C++ JSCPP Engine\n#include <iostream>\nusing namespace std;\nint main() {\n    cout << "[+] Compilado em C++!" << endl;\n    return 0;\n}`,
-      csharp: `// C# Script\nusing System;\npublic class Program {\n    public static void Main() {\n        Console.WriteLine("[+] Executando C# Engine...");\n    }\n}\nProgram.Main();`,
-      java: `// Java Script\npublic class Main {\n    public static void main() {\n        System.out.println("[+] Executando Java Engine...");\n    }\n}\nMain.main();`,
-      php: `<?php\necho "[+] Script PHP ativo!\\n";\n?>`,
-      lua: `-- Lua VM\nprint("[+] Script Lua executado com sucesso!")`,
-      sql: `CREATE TABLE logs (id INT, msg TEXT);\nINSERT INTO logs VALUES (1, 'System Boot');\nSELECT * FROM logs;`,
-      bash: `echo "[+] Terminal Shell Simulator"\nuname -a\nls -la`,
-      json: `{\n  "status": "Online",\n  "version": "4.0"\n}`,
-      markdown: `# Documentacao Neural OS\n> Teste de visualizacao **Markdown** em tempo real.`
+      javascript: `// JavaScript ES6 Environment\nasync function init() {\n  console.log("Sistema Neural Operacional");\n}\ninit();`,
+      html: `<!-- HTML Live Preview -->\n<style>\n  body { background: #020804; color: #00ff41; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; }\n</style>\n<h1>MATRIX CODE STUDIO</h1>`,
+      python: `# Python WASM\ndef run():\n    print("Executando Python Core")\nrun()`,
+      cpp: `// C++ Engine\n#include <iostream>\nusing namespace std;\nint main() {\n    cout << "C++ Compilado!" << endl;\n    return 0;\n}`,
+      csharp: `using System;\npublic class Program {\n    public static void Main() {\n        Console.WriteLine("C# Engine Active");\n    }\n}\nProgram.Main();`,
+      lua: `-- Lua VM\nprint("Lua Script Operacional")`,
+      markdown: `# Documentacao\n> Teste de visualizacao **Markdown**`,
+      json: `{\n  "appName": "Matrix Studio",\n  "version": "5.0"\n}`
     };
 
-    let tabs = [{ id: 1, name: 'script.js', lang: 'javascript', code: codeTemplates.javascript }];
-    let activeTabId = 1;
+    let files = [
+      { id: 1, name: 'index.js', lang: 'javascript', code: codeTemplates.javascript },
+      { id: 2, name: 'style.html', lang: 'html', code: codeTemplates.html }
+    ];
+    let activeFileId = 1;
 
     const tabsBar = document.getElementById('tabsBar');
+    const fileTree = document.getElementById('fileTree');
     const codeEditor = document.getElementById('codeEditor');
     const highlightCode = document.getElementById('highlightCode');
     const lineNumbers = document.getElementById('lineNumbers');
+    const minimap = document.getElementById('minimap');
     const langSelect = document.getElementById('langSelect');
     const statusInfo = document.getElementById('statusInfo');
 
+    function renderExplorer() {
+      fileTree.innerHTML = '';
+      files.forEach(file => {
+        const item = document.createElement('div');
+        item.className = `file-item ${file.id === activeFileId ? 'active' : ''}`;
+        item.innerHTML = `&#128462; ${file.name}`;
+        item.onclick = () => switchFile(file.id);
+        fileTree.appendChild(item);
+      });
+    }
+
     function renderTabs() {
       tabsBar.innerHTML = '';
-      tabs.forEach(tab => {
+      files.forEach(file => {
         const el = document.createElement('div');
-        el.className = `tab ${tab.id === activeTabId ? 'active' : ''}`;
-        el.innerHTML = `<span>${tab.name}</span> <span class="tab-close" data-id="${tab.id}">\u00D7</span>`;
+        el.className = `tab ${file.id === activeFileId ? 'active' : ''}`;
+        el.innerHTML = `<span>${file.name}</span> <span class="tab-close" data-id="${file.id}">\u00D7</span>`;
         el.addEventListener('click', (e) => {
-          if (!e.target.classList.contains('tab-close')) switchTab(tab.id);
+          if (!e.target.classList.contains('tab-close')) switchFile(file.id);
         });
         tabsBar.appendChild(el);
       });
 
       document.querySelectorAll('.tab-close').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.onclick = (e) => {
           e.stopPropagation();
-          closeTab(parseInt(btn.getAttribute('data-id')));
-        });
+          closeFile(parseInt(btn.getAttribute('data-id')));
+        };
       });
     }
 
-    function switchTab(id) {
-      const currentTab = tabs.find(t => t.id === activeTabId);
-      if (currentTab) currentTab.code = codeEditor.value;
+    function switchFile(id) {
+      const current = files.find(f => f.id === activeFileId);
+      if (current) current.code = codeEditor.value;
 
-      activeTabId = id;
-      const newTab = tabs.find(t => t.id === activeTabId);
-      codeEditor.value = newTab.code;
-      langSelect.value = newTab.lang;
+      activeFileId = id;
+      const target = files.find(f => f.id === activeFileId);
+      codeEditor.value = target.code;
+      langSelect.value = target.lang;
       renderTabs();
+      renderExplorer();
       updateEditor();
     }
 
-    function closeTab(id) {
-      if (tabs.length === 1) return;
-      tabs = tabs.filter(t => t.id !== id);
-      if (activeTabId === id) activeTabId = tabs[0].id;
-      switchTab(activeTabId);
+    function closeFile(id) {
+      if (files.length === 1) return;
+      files = files.filter(f => f.id !== id);
+      if (activeFileId === id) activeFileId = files[0].id;
+      switchFile(activeFileId);
     }
 
-    document.getElementById('btnNewTab').addEventListener('click', () => {
-      const newId = Date.now();
-      tabs.push({ id: newId, name: `tab_${tabs.length + 1}.js`, lang: 'javascript', code: '// Novo Arquivo\n' });
-      switchTab(newId);
+    function createNewFile() {
+      const id = Date.now();
+      files.push({ id, name: `file_${files.length + 1}.js`, lang: 'javascript', code: '// Novo Codigo\n' });
+      switchFile(id);
+    }
+
+    document.getElementById('btnSidebarNewFile').onclick = createNewFile;
+    document.getElementById('menuNewFile').onclick = createNewFile;
+
+    /* --- SIDEBAR SWAPPING --- */
+    document.querySelectorAll('.activity-icon').forEach(icon => {
+      icon.onclick = () => {
+        document.querySelectorAll('.activity-icon').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.sidebar-pane').forEach(p => p.classList.remove('active'));
+        icon.classList.add('active');
+        document.getElementById(`pane-${icon.getAttribute('data-pane')}`).classList.add('active');
+      };
     });
 
-    /* --- 3. EDITOR HIGHLIGHT & STATS --- */
+    /* --- EDITOR & SYNTAX HIGHLIGHTING (SUPORTE A TROCA MANUAL) --- */
     function updateEditor() {
       const code = codeEditor.value;
       highlightCode.textContent = code;
       
-      const langMap = { javascript: 'javascript', python: 'python', cpp: 'cpp', csharp: 'csharp', html: 'markup' };
+      const langMap = { 
+        javascript: 'javascript', 
+        python: 'python', 
+        cpp: 'cpp', 
+        csharp: 'csharp', 
+        html: 'markup',
+        lua: 'lua',
+        markdown: 'markdown',
+        json: 'json'
+      };
+      
       highlightCode.className = `language-${langMap[langSelect.value] || 'javascript'}`;
       Prism.highlightElement(highlightCode);
 
       const lines = code.split('\n').length;
       lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
+      minimap.textContent = code;
 
       const pos = codeEditor.selectionStart;
       const lineNum = code.substring(0, pos).split('\n').length;
@@ -422,8 +559,8 @@
     }
 
     codeEditor.addEventListener('input', () => {
-      const tab = tabs.find(t => t.id === activeTabId);
-      if (tab) tab.code = codeEditor.value;
+      const file = files.find(f => f.id === activeFileId);
+      if (file) file.code = codeEditor.value;
       updateEditor();
     });
 
@@ -433,45 +570,45 @@
       lineNumbers.scrollTop = codeEditor.scrollTop;
     });
 
-    codeEditor.addEventListener('keyup', updateEditor);
-    codeEditor.addEventListener('click', updateEditor);
-
+    /* ALTERAÇÃO DA LINGUAGEM MANUALMENTE */
     langSelect.addEventListener('change', (e) => {
-      const selected = e.target.value;
-      const tab = tabs.find(t => t.id === activeTabId);
-      if (tab) {
-        tab.lang = selected;
-        tab.code = codeTemplates[selected] || '';
-        codeEditor.value = tab.code;
+      const selectedLang = e.target.value;
+      const file = files.find(f => f.id === activeFileId);
+      
+      if (file) {
+        file.lang = selectedLang;
       }
+      
+      // Atualiza o realce visual com a nova linguagem selecionada
       updateEditor();
     });
 
-    /* --- 4. IMPORT / EXPORT SYSTEM --- */
-    document.getElementById('btnExport').addEventListener('click', () => {
-      const blob = new Blob([codeEditor.value], { type: 'text/plain;charset=utf-8' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `script_${Date.now()}.${langSelect.value === 'javascript' ? 'js' : 'txt'}`;
-      a.click();
+    /* --- BUSCA NO CÓDIGO --- */
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const resultsEl = document.getElementById('searchResults');
+      if (!query) { resultsEl.innerHTML = ''; return; }
+      
+      const lines = codeEditor.value.split('\n');
+      let matches = [];
+      lines.forEach((line, idx) => {
+        if (line.toLowerCase().includes(query)) matches.push(`L${idx + 1}: ${line.trim()}`);
+      });
+      resultsEl.innerHTML = matches.length ? matches.join('<br>') : 'Nenhuma ocorrencia encontrada.';
     });
 
-    document.getElementById('btnImport').addEventListener('click', () => {
-      document.getElementById('fileInput').click();
-    });
+    /* --- SNIPPETS --- */
+    function insertSnippet(type) {
+      let snippet = '';
+      if (type === 'fetch') snippet = `fetch('https://api.example.com/data')\n  .then(res => res.json())\n  .then(data => console.log(data));`;
+      if (type === 'class') snippet = `class SystemCore {\n  constructor(name) {\n    this.name = name;\n  }\n}`;
+      if (type === 'async') snippet = `async function executeTask() {\n  try {\n    // Task code\n  } catch (err) {\n    console.error(err);\n  }\n}`;
+      
+      codeEditor.value += `\n${snippet}\n`;
+      updateEditor();
+    }
 
-    document.getElementById('fileInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        codeEditor.value = evt.target.result;
-        updateEditor();
-      };
-      reader.readAsText(file, 'UTF-8');
-    });
-
-    /* --- 5. EXECUTION & REPL ENGINE --- */
+    /* --- EXECUÇÃO POLYGLOT --- */
     const logContent = document.getElementById('logContent');
     const consoleOutput = document.getElementById('consoleOutput');
     const htmlPreview = document.getElementById('htmlPreview');
@@ -492,9 +629,9 @@
     }
 
     function clearConsole() { logContent.innerHTML = ''; }
-    document.getElementById('btnClear').addEventListener('click', clearConsole);
+    document.getElementById('menuClear').onclick = clearConsole;
 
-    async function executePolyglotCode() {
+    async function executeCode() {
       const lang = langSelect.value;
       const code = codeEditor.value;
       const startTime = performance.now();
@@ -507,12 +644,12 @@
 
       consoleOutput.style.display = 'flex'; htmlPreview.style.display = 'none';
       clearConsole();
-      printToTerminal('info', [`[BUILD] Contexto: ${lang.toUpperCase()}...`]);
+      printToTerminal('info', [`[BUILD] Executando ${lang.toUpperCase()}...`]);
 
       try {
         if (lang === 'javascript') {
           const fn = new Function('console', `return (async () => { ${code} })();`);
-          const res = await fn({ log: (...args) => printToTerminal('info', args), warn: (...args) => printToTerminal('warn', args), error: (...args) => printToTerminal('error', args) });
+          const res = await fn({ log: (...args) => printToTerminal('info', args), error: (...args) => printToTerminal('error', args) });
           if (res !== undefined) printToTerminal('return', [res]);
         }
         else if (lang === 'python') {
@@ -526,42 +663,58 @@
           JSCPP.run(code, "", { stdio: { write: (str) => outputBuffer += str } });
           outputBuffer.split('\n').filter(Boolean).forEach(line => printToTerminal('info', [line]));
         }
-        else if (['csharp', 'java', 'php'].includes(lang)) {
-          let jsPhp = code.replace(/(using|import|public|class|static|void|echo|\$)/g, '').replace(/(Console\.WriteLine|System\.out\.println)/g, 'console.log');
-          const fn = new Function('console', jsPhp);
-          fn({ log: (...args) => printToTerminal('info', args) });
-        }
         else if (lang === 'lua') {
-          const L = fengari.L;
-          fengari.interop.push(L, (...args) => printToTerminal('info', args));
-          fengari.lua.lua_setglobal(L, "print");
-          fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(code));
+          fengari.load(code)();
         }
       } catch (err) {
         printToTerminal('error', [`ExecutionError: ${err.message}`]);
       }
 
-      execTimeEl.textContent = `Tempo de Execução: ${Math.round(performance.now() - startTime)}ms`;
+      execTimeEl.textContent = `Tempo: ${Math.round(performance.now() - startTime)}ms`;
     }
 
-    document.getElementById('btnExecute').addEventListener('click', executePolyglotCode);
+    document.getElementById('menuRun').onclick = executeCode;
 
-    document.getElementById('btnSendRepl').addEventListener('click', async () => {
-      const replInput = document.getElementById('replInput');
-      const val = replInput.value.trim();
-      if (!val) return;
-      printToTerminal('info', [`REPL > ${val}`]);
+    document.getElementById('btnSendRepl').onclick = () => {
+      const input = document.getElementById('replInput');
+      if (!input.value.trim()) return;
+      printToTerminal('info', [`REPL > ${input.value}`]);
       try {
-        const res = eval(val);
+        const res = eval(input.value);
         printToTerminal('return', [res]);
-      } catch(err) {
+      } catch (err) {
         printToTerminal('error', [err.message]);
       }
-      replInput.value = '';
-    });
+      input.value = '';
+    };
 
+    /* IMPORT / EXPORT */
+    document.getElementById('menuSaveFile').onclick = () => {
+      const file = files.find(f => f.id === activeFileId);
+      const blob = new Blob([codeEditor.value], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = file ? file.name : 'script.js';
+      a.click();
+    };
+
+    document.getElementById('menuOpenFile').onclick = () => document.getElementById('fileInput').click();
+
+    document.getElementById('fileInput').onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const id = Date.now();
+        files.push({ id, name: file.name, lang: 'javascript', code: evt.target.result });
+        switchFile(id);
+      };
+      reader.readAsText(file, 'UTF-8');
+    };
+
+    /* TECLAS DE ATALHO DO VS CODE */
     codeEditor.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); executePolyglotCode(); }
+      if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); executeCode(); }
       if (e.key === 'Tab') {
         e.preventDefault();
         const start = codeEditor.selectionStart, end = codeEditor.selectionEnd;
@@ -571,6 +724,7 @@
       }
     });
 
+    renderExplorer();
     renderTabs();
     updateEditor();
   </script>

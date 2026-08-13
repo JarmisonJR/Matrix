@@ -1,0 +1,578 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEURAL OS // ULTIMATE POLYGLOT IDE v4.0</title>
+  
+  <!-- CDN Runtimes & Interpreters -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jscpp@1.0.5/dist/JSCPP.es5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+  
+  <!-- Prism.js (Syntax Highlighting) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap');
+
+    :root {
+      --primary: #00ff41;
+      --primary-glow: rgba(0, 255, 65, 0.4);
+      --primary-dim: #00b32d;
+      --primary-dark: #003b0f;
+      --bg-dark: #020804;
+      --window-bg: rgba(2, 12, 5, 0.96);
+      --border-color: rgba(0, 255, 65, 0.35);
+      --text-color: #00ff41;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-dark);
+      overflow: hidden;
+      font-family: 'Fira Code', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: var(--text-color);
+    }
+
+    canvas#matrixCanvas {
+      display: block; position: absolute; top: 0; left: 0;
+      z-index: 1; opacity: 0.25;
+    }
+
+    .crt-overlay {
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 2; pointer-events: none;
+      background: linear-gradient(rgba(0, 20, 5, 0) 50%, rgba(0, 0, 0, 0.5) 50%);
+      background-size: 100% 4px;
+      box-shadow: inset 0 0 120px rgba(0, 255, 65, 0.15), inset 0 0 180px rgba(0, 0, 0, 0.95);
+    }
+
+    .terminal-window {
+      position: relative; z-index: 10;
+      width: 96vw; max-width: 1400px; height: 92vh;
+      background: var(--window-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 0 40px rgba(0, 255, 65, 0.2), inset 0 0 20px rgba(0, 255, 65, 0.05);
+      backdrop-filter: blur(12px);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    .terminal-header {
+      background: rgba(0, 255, 65, 0.06);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 10px;
+    }
+
+    .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+    label { font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; color: var(--primary); }
+
+    select, button, input {
+      background: #000d03; border: 1px solid var(--primary); color: var(--primary);
+      font-family: 'Fira Code', monospace; padding: 4px 8px; border-radius: 4px;
+      outline: none; font-size: 0.75rem;
+    }
+
+    select option { background: #020804; color: var(--primary); }
+
+    .btn-action {
+      cursor: pointer; transition: all 0.2s; font-weight: 600;
+      display: flex; align-items: center; gap: 4px; background: rgba(0, 255, 65, 0.05);
+    }
+
+    .btn-action:hover {
+      background: var(--primary); color: #020804; box-shadow: 0 0 12px var(--primary-glow);
+    }
+
+    .btn-action.clear {
+      border-color: var(--primary-dim); color: var(--primary-dim); background: rgba(0, 255, 65, 0.02);
+    }
+    .btn-action.clear:hover {
+      background: var(--primary-dim); color: #020804; box-shadow: 0 0 10px var(--primary-dim);
+    }
+
+    /* --- TABS BAR --- */
+    .tabs-bar {
+      display: flex; background: rgba(0, 5, 2, 0.8);
+      border-bottom: 1px solid rgba(0, 255, 65, 0.2); padding: 4px 8px 0 8px; gap: 4px;
+    }
+
+    .tab {
+      padding: 6px 12px; background: rgba(0, 255, 65, 0.04);
+      border: 1px solid rgba(0, 255, 65, 0.2); border-bottom: none;
+      border-radius: 4px 4px 0 0; font-size: 0.75rem; cursor: pointer; color: var(--primary-dim);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .tab.active {
+      background: rgba(0, 255, 65, 0.15); color: var(--primary);
+      border-color: var(--primary); font-weight: bold;
+      box-shadow: 0 -2px 8px rgba(0, 255, 65, 0.2);
+    }
+
+    .tab-close { font-size: 0.65rem; padding: 1px 4px; border-radius: 50%; color: var(--primary-dim); }
+    .tab-close:hover { background: var(--primary); color: #020804; }
+
+    /* --- WORKSPACE --- */
+    .terminal-body {
+      display: flex; flex: 1; padding: 10px; gap: 10px; overflow: hidden;
+    }
+
+    .editor-wrapper {
+      flex: 1.2; display: flex; position: relative;
+      background: rgba(0, 5, 2, 0.7); border: 1px solid rgba(0, 255, 65, 0.2);
+      border-radius: 4px; overflow: hidden;
+    }
+
+    .line-numbers {
+      width: 40px; padding: 10px 0; background: rgba(0, 0, 0, 0.5);
+      border-right: 1px solid rgba(0, 255, 65, 0.15); color: var(--primary-dark);
+      font-size: 0.82rem; line-height: 1.5; text-align: right; padding-right: 8px; user-select: none;
+    }
+
+    .editor-container { position: relative; flex: 1; height: 100%; overflow: hidden; }
+
+    textarea#codeEditor, pre#highlightArea {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      padding: 10px; font-family: 'Fira Code', monospace; font-size: 0.85rem;
+      line-height: 1.5; tab-size: 2; white-space: pre; word-wrap: normal;
+      overflow: auto; box-sizing: border-box; border: none; outline: none; margin: 0;
+    }
+
+    textarea#codeEditor {
+      z-index: 2; color: transparent; background: transparent; caret-color: var(--primary); resize: none;
+    }
+
+    pre#highlightArea { z-index: 1; pointer-events: none; background: transparent !important; }
+
+    /* UNIFICAÇÃO DE CORES DAS SINTAXES PRISM PARA TONS DE VERDE */
+    pre[class*="language-"] { color: var(--primary) !important; text-shadow: none !important; }
+    .token.comment, .token.prolog, .token.doctype, .token.cdata { color: rgba(0, 255, 65, 0.4) !important; font-style: italic; }
+    .token.punctuation { color: #00cc33 !important; }
+    .token.namespace { opacity: .7; }
+    .token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted { color: #66ff8c !important; }
+    .token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { color: #a3ffbd !important; }
+    .token.operator, .token.entity, .token.url, .language-css .token.string, .style .token.string { color: #00ff41 !important; }
+    .token.atrule, .token.attr-value, .token.keyword { color: #33ff66 !important; font-weight: bold; }
+    .token.function, .token.class-name { color: #b8ffcc !important; }
+    .token.regex, .token.important, .token.variable { color: #00e639 !important; }
+
+    /* --- CONSOLE OUTPUT --- */
+    .output-wrapper {
+      flex: 0.8; display: flex; flex-direction: column; position: relative; gap: 6px;
+    }
+
+    .console-output {
+      flex: 1; background: rgba(0, 4, 1, 0.95); border: 1px solid rgba(0, 255, 65, 0.25);
+      border-radius: 4px; padding: 10px; font-size: 0.8rem; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+
+    iframe#htmlPreview {
+      width: 100%; height: 100%; background: #020804;
+      border: 1px solid rgba(0, 255, 65, 0.4); border-radius: 4px; display: none;
+    }
+
+    .repl-input-group {
+      display: flex; gap: 6px; background: rgba(0, 4, 1, 0.9);
+      border: 1px solid rgba(0, 255, 65, 0.25); padding: 4px; border-radius: 4px;
+    }
+
+    .repl-input-group input { flex: 1; background: transparent; border: none; color: var(--primary); }
+
+    .status-bar {
+      height: 24px; background: rgba(0, 255, 65, 0.05); border-top: 1px solid rgba(0, 255, 65, 0.2);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 12px; font-size: 0.7rem; color: rgba(0, 255, 65, 0.75);
+    }
+
+    .log-line { display: flex; gap: 8px; word-break: break-all; }
+    .log-prefix { color: rgba(0, 255, 65, 0.4); user-select: none; }
+    .log-info { color: var(--primary); }
+    .log-warn { color: #88ffaa; }
+    .log-error { color: #55ff88; text-decoration: underline; }
+    .log-return { color: #b3ffcc; font-style: italic; }
+
+    .blink { animation: blink 1s infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+  </style>
+</head>
+<body>
+
+  <div class="crt-overlay"></div>
+
+  <div class="terminal-window">
+    <!-- HEADER & TOOLBAR -->
+    <div class="terminal-header">
+      <div class="toolbar-left">
+        <label for="langSelect">LINGUAGEM:</label>
+        <select id="langSelect">
+          <optgroup label="Web & Frontend">
+            <option value="javascript">JavaScript (ES6+)</option>
+            <option value="html">HTML5 / CSS3 Preview</option>
+            <option value="json">JSON Validator</option>
+            <option value="markdown">Markdown Preview</option>
+          </optgroup>
+          <optgroup label="Linguagens de Alto Desempenho">
+            <option value="python">Python 3.11 (Pyodide WASM)</option>
+            <option value="cpp">C / C++ (JSCPP Engine)</option>
+            <option value="csharp">C# (.NET Script Engine)</option>
+            <option value="java">Java (OOP Engine)</option>
+            <option value="php">PHP Engine</option>
+            <option value="lua">Lua 5.3 (Fengari VM)</option>
+            <option value="sql">SQL In-Memory</option>
+            <option value="bash">Bash / Shell CLI</option>
+          </optgroup>
+        </select>
+
+        <button class="btn-action" id="btnNewTab">+ Nova Aba</button>
+      </div>
+
+      <div class="toolbar-right">
+        <button class="btn-action" id="btnImport">Abrir</button>
+        <button class="btn-action" id="btnExport">Salvar</button>
+        <button class="btn-action clear" id="btnClear">Limpar</button>
+        <button class="btn-action" id="btnExecute">&#9654; EXECUTAR (Ctrl+Enter)</button>
+        <input type="file" id="fileInput" style="display: none;">
+      </div>
+    </div>
+
+    <!-- TABS SYSTEM -->
+    <div class="tabs-bar" id="tabsBar"></div>
+
+    <!-- WORKSPACE BODY -->
+    <div class="terminal-body">
+      <div class="editor-wrapper">
+        <div class="line-numbers" id="lineNumbers">1</div>
+        <div class="editor-container">
+          <textarea id="codeEditor" spellcheck="false"></textarea>
+          <pre id="highlightArea"><code class="language-javascript" id="highlightCode"></code></pre>
+        </div>
+      </div>
+
+      <div class="output-wrapper">
+        <div class="console-output" id="consoleOutput">
+          <div style="font-size: 0.68rem; color: rgba(0, 255, 65, 0.4); margin-bottom: 4px;">// CONSOLE_OUTPUT_LOG</div>
+          <div id="logContent">
+            <div class="log-line log-info"><span class="log-prefix">></span> IDE Neural v4.0 Pronta para Execu&ccedil;&atilde;o.<span class="blink">_</span></div>
+          </div>
+        </div>
+        
+        <iframe id="htmlPreview"></iframe>
+
+        <!-- INTERACTIVE REPL INPUT -->
+        <div class="repl-input-group">
+          <span style="font-size: 0.75rem; color: var(--primary); align-self: center;">&gt;</span>
+          <input type="text" id="replInput" placeholder="Comando REPL r&aacute;pido (JS/Python)...">
+          <button class="btn-action" id="btnSendRepl">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATUS BAR FOOTER -->
+    <div class="status-bar">
+      <div id="statusInfo">Linha: 1 | Coluna: 1 | Caracteres: 0</div>
+      <div id="statusExecution">Tempo de Execu&ccedil;&atilde;o: 0ms</div>
+      <div>WASM_CORE: ACTIVE</div>
+    </div>
+  </div>
+
+  <canvas id="matrixCanvas"></canvas>
+
+  <script>
+    /* --- 1. MATRIX BACKGROUND ENGINE --- */
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas();
+
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ<>[]{}/*=+#';
+    const fontSize = 14;
+    let columns = Math.floor(canvas.width / fontSize);
+    let drops = Array(columns).fill(0).map(() => Math.floor(Math.random() * -100));
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      columns = Math.floor(canvas.width / fontSize);
+      drops = Array(columns).fill(0).map(() => Math.floor(Math.random() * -100));
+    });
+
+    function drawRain() {
+      ctx.fillStyle = 'rgba(2, 8, 4, 0.08)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.font = fontSize + 'px "Fira Code", monospace';
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        const y = drops[i] * fontSize;
+        ctx.fillStyle = '#b8ffcc';
+        ctx.fillText(text, x, y);
+        ctx.fillStyle = '#00ff41';
+        ctx.fillText(text, x, y - fontSize);
+        if (y > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    }
+    setInterval(drawRain, 33);
+
+    /* --- 2. MULTI-TAB & STATE MANAGEMENT --- */
+    const codeTemplates = {
+      javascript: `// JavaScript ES6+ Environment\nasync function main() {\n  console.log("[+] Executando script JS...");\n  return "LOG_OK";\n}\nmain();`,
+      html: `<!-- HTML/CSS Live Render -->\n<style>\n  body { background: #020804; color: #00ff41; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }\n  .box { border: 1px solid #00ff41; padding: 20px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,255,65,0.3); }\n</style>\n<div class="box">\n  <h2>NEURAL OS UI</h2>\n  <p>Renderizacao de Frontend em Tempo Real</p>\n</div>`,
+      python: `# Python 3.11 WASM\ndef run():\n    print("[+] Executando em Python...")\n    return [x**2 for x in range(5)]\nrun()`,
+      cpp: `// C++ JSCPP Engine\n#include <iostream>\nusing namespace std;\nint main() {\n    cout << "[+] Compilado em C++!" << endl;\n    return 0;\n}`,
+      csharp: `// C# Script\nusing System;\npublic class Program {\n    public static void Main() {\n        Console.WriteLine("[+] Executando C# Engine...");\n    }\n}\nProgram.Main();`,
+      java: `// Java Script\npublic class Main {\n    public static void main() {\n        System.out.println("[+] Executando Java Engine...");\n    }\n}\nMain.main();`,
+      php: `<?php\necho "[+] Script PHP ativo!\\n";\n?>`,
+      lua: `-- Lua VM\nprint("[+] Script Lua executado com sucesso!")`,
+      sql: `CREATE TABLE logs (id INT, msg TEXT);\nINSERT INTO logs VALUES (1, 'System Boot');\nSELECT * FROM logs;`,
+      bash: `echo "[+] Terminal Shell Simulator"\nuname -a\nls -la`,
+      json: `{\n  "status": "Online",\n  "version": "4.0"\n}`,
+      markdown: `# Documentacao Neural OS\n> Teste de visualizacao **Markdown** em tempo real.`
+    };
+
+    let tabs = [{ id: 1, name: 'script.js', lang: 'javascript', code: codeTemplates.javascript }];
+    let activeTabId = 1;
+
+    const tabsBar = document.getElementById('tabsBar');
+    const codeEditor = document.getElementById('codeEditor');
+    const highlightCode = document.getElementById('highlightCode');
+    const lineNumbers = document.getElementById('lineNumbers');
+    const langSelect = document.getElementById('langSelect');
+    const statusInfo = document.getElementById('statusInfo');
+
+    function renderTabs() {
+      tabsBar.innerHTML = '';
+      tabs.forEach(tab => {
+        const el = document.createElement('div');
+        el.className = `tab ${tab.id === activeTabId ? 'active' : ''}`;
+        el.innerHTML = `<span>${tab.name}</span> <span class="tab-close" data-id="${tab.id}">\u00D7</span>`;
+        el.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('tab-close')) switchTab(tab.id);
+        });
+        tabsBar.appendChild(el);
+      });
+
+      document.querySelectorAll('.tab-close').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeTab(parseInt(btn.getAttribute('data-id')));
+        });
+      });
+    }
+
+    function switchTab(id) {
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      if (currentTab) currentTab.code = codeEditor.value;
+
+      activeTabId = id;
+      const newTab = tabs.find(t => t.id === activeTabId);
+      codeEditor.value = newTab.code;
+      langSelect.value = newTab.lang;
+      renderTabs();
+      updateEditor();
+    }
+
+    function closeTab(id) {
+      if (tabs.length === 1) return;
+      tabs = tabs.filter(t => t.id !== id);
+      if (activeTabId === id) activeTabId = tabs[0].id;
+      switchTab(activeTabId);
+    }
+
+    document.getElementById('btnNewTab').addEventListener('click', () => {
+      const newId = Date.now();
+      tabs.push({ id: newId, name: `tab_${tabs.length + 1}.js`, lang: 'javascript', code: '// Novo Arquivo\n' });
+      switchTab(newId);
+    });
+
+    /* --- 3. EDITOR HIGHLIGHT & STATS --- */
+    function updateEditor() {
+      const code = codeEditor.value;
+      highlightCode.textContent = code;
+      
+      const langMap = { javascript: 'javascript', python: 'python', cpp: 'cpp', csharp: 'csharp', html: 'markup' };
+      highlightCode.className = `language-${langMap[langSelect.value] || 'javascript'}`;
+      Prism.highlightElement(highlightCode);
+
+      const lines = code.split('\n').length;
+      lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
+
+      const pos = codeEditor.selectionStart;
+      const lineNum = code.substring(0, pos).split('\n').length;
+      const colNum = pos - code.substring(0, pos).lastIndexOf('\n');
+      statusInfo.textContent = `Linha: ${lineNum} | Coluna: ${colNum} | Caracteres: ${code.length}`;
+    }
+
+    codeEditor.addEventListener('input', () => {
+      const tab = tabs.find(t => t.id === activeTabId);
+      if (tab) tab.code = codeEditor.value;
+      updateEditor();
+    });
+
+    codeEditor.addEventListener('scroll', () => {
+      document.getElementById('highlightArea').scrollTop = codeEditor.scrollTop;
+      document.getElementById('highlightArea').scrollLeft = codeEditor.scrollLeft;
+      lineNumbers.scrollTop = codeEditor.scrollTop;
+    });
+
+    codeEditor.addEventListener('keyup', updateEditor);
+    codeEditor.addEventListener('click', updateEditor);
+
+    langSelect.addEventListener('change', (e) => {
+      const selected = e.target.value;
+      const tab = tabs.find(t => t.id === activeTabId);
+      if (tab) {
+        tab.lang = selected;
+        tab.code = codeTemplates[selected] || '';
+        codeEditor.value = tab.code;
+      }
+      updateEditor();
+    });
+
+    /* --- 4. IMPORT / EXPORT SYSTEM --- */
+    document.getElementById('btnExport').addEventListener('click', () => {
+      const blob = new Blob([codeEditor.value], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `script_${Date.now()}.${langSelect.value === 'javascript' ? 'js' : 'txt'}`;
+      a.click();
+    });
+
+    document.getElementById('btnImport').addEventListener('click', () => {
+      document.getElementById('fileInput').click();
+    });
+
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        codeEditor.value = evt.target.result;
+        updateEditor();
+      };
+      reader.readAsText(file, 'UTF-8');
+    });
+
+    /* --- 5. EXECUTION & REPL ENGINE --- */
+    const logContent = document.getElementById('logContent');
+    const consoleOutput = document.getElementById('consoleOutput');
+    const htmlPreview = document.getElementById('htmlPreview');
+    const execTimeEl = document.getElementById('statusExecution');
+    let pyodideInstance = null;
+
+    function printToTerminal(type, args) {
+      const line = document.createElement('div');
+      line.className = `log-line log-${type}`;
+      const prefix = document.createElement('span');
+      prefix.className = 'log-prefix';
+      prefix.textContent = type === 'return' ? '<' : '>';
+      const content = document.createElement('span');
+      content.textContent = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ');
+      line.appendChild(prefix); line.appendChild(content);
+      logContent.appendChild(line);
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    function clearConsole() { logContent.innerHTML = ''; }
+    document.getElementById('btnClear').addEventListener('click', clearConsole);
+
+    async function executePolyglotCode() {
+      const lang = langSelect.value;
+      const code = codeEditor.value;
+      const startTime = performance.now();
+
+      if (lang === 'html' || lang === 'markdown') {
+        consoleOutput.style.display = 'none'; htmlPreview.style.display = 'block';
+        htmlPreview.srcdoc = lang === 'html' ? code : `<style>body{background:#020804;color:#00ff41;font-family:monospace;padding:20px;}</style>${marked.parse(code)}`;
+        return;
+      }
+
+      consoleOutput.style.display = 'flex'; htmlPreview.style.display = 'none';
+      clearConsole();
+      printToTerminal('info', [`[BUILD] Contexto: ${lang.toUpperCase()}...`]);
+
+      try {
+        if (lang === 'javascript') {
+          const fn = new Function('console', `return (async () => { ${code} })();`);
+          const res = await fn({ log: (...args) => printToTerminal('info', args), warn: (...args) => printToTerminal('warn', args), error: (...args) => printToTerminal('error', args) });
+          if (res !== undefined) printToTerminal('return', [res]);
+        }
+        else if (lang === 'python') {
+          if (!pyodideInstance) { printToTerminal('warn', ['[+] Carregando Pyodide WASM...']); pyodideInstance = await loadPyodide(); }
+          pyodideInstance.setStdout({ batched: (str) => printToTerminal('info', [str]) });
+          const res = await pyodideInstance.runPythonAsync(code);
+          if (res !== undefined) printToTerminal('return', [res]);
+        }
+        else if (lang === 'cpp') {
+          let outputBuffer = "";
+          JSCPP.run(code, "", { stdio: { write: (str) => outputBuffer += str } });
+          outputBuffer.split('\n').filter(Boolean).forEach(line => printToTerminal('info', [line]));
+        }
+        else if (['csharp', 'java', 'php'].includes(lang)) {
+          let jsPhp = code.replace(/(using|import|public|class|static|void|echo|\$)/g, '').replace(/(Console\.WriteLine|System\.out\.println)/g, 'console.log');
+          const fn = new Function('console', jsPhp);
+          fn({ log: (...args) => printToTerminal('info', args) });
+        }
+        else if (lang === 'lua') {
+          const L = fengari.L;
+          fengari.interop.push(L, (...args) => printToTerminal('info', args));
+          fengari.lua.lua_setglobal(L, "print");
+          fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(code));
+        }
+      } catch (err) {
+        printToTerminal('error', [`ExecutionError: ${err.message}`]);
+      }
+
+      execTimeEl.textContent = `Tempo de Execução: ${Math.round(performance.now() - startTime)}ms`;
+    }
+
+    document.getElementById('btnExecute').addEventListener('click', executePolyglotCode);
+
+    document.getElementById('btnSendRepl').addEventListener('click', async () => {
+      const replInput = document.getElementById('replInput');
+      const val = replInput.value.trim();
+      if (!val) return;
+      printToTerminal('info', [`REPL > ${val}`]);
+      try {
+        const res = eval(val);
+        printToTerminal('return', [res]);
+      } catch(err) {
+        printToTerminal('error', [err.message]);
+      }
+      replInput.value = '';
+    });
+
+    codeEditor.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); executePolyglotCode(); }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = codeEditor.selectionStart, end = codeEditor.selectionEnd;
+        codeEditor.value = codeEditor.value.substring(0, start) + "  " + codeEditor.value.substring(end);
+        codeEditor.selectionStart = codeEditor.selectionEnd = start + 2;
+        updateEditor();
+      }
+    });
+
+    renderTabs();
+    updateEditor();
+  </script>
+</body>
+</html>

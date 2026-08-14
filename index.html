@@ -3,17 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEURAL OS // MATRIX CODE STUDIO v5.0</title>
-  
-  <!-- CDN Runtimes & Interpreters -->
+
+  <meta
+    name="description"
+    content="NEURAL OS // MATRIX CODE STUDIO"
+  >
+
+  <title>NEURAL OS // MATRIX CODE STUDIO v7.0</title>
+
+  <!-- =========================================================
+       RUNTIMES
+  ========================================================== -->
+
   <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jscpp@1.0.5/dist/JSCPP.es5.min.js"></script>
+
+  <!-- Markdown -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
-  
-  <!-- Prism.js (Syntax Highlighting) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+
+  <!-- Prism -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+  >
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
@@ -22,711 +38,966 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap');
+  <!-- Fonte -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Orbitron:wght@500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
 
-    :root {
-      --primary: #00ff41;
-      --primary-glow: rgba(0, 255, 65, 0.4);
-      --primary-dim: #00b32d;
-      --primary-dark: #003b0f;
-      --bg-dark: #020804;
-      --window-bg: rgba(2, 12, 5, 0.88);
-      --border-color: rgba(0, 255, 65, 0.45);
-      --text-color: #00ff41;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background-color: var(--bg-dark);
-      overflow: hidden;
-      font-family: 'Fira Code', monospace;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      color: var(--text-color);
-    }
-
-    /* --- CHUVA MATRIX COM MAIOR VISIBILIDADE E EFEITO NEON --- */
-    canvas#matrixCanvas {
-      display: block; 
-      position: absolute; 
-      top: 0; 
-      left: 0;
-      z-index: 1; 
-      opacity: 0.75; /* Aumentado para dar muito mais visibilidade */
-      filter: drop-shadow(0 0 6px rgba(0, 255, 65, 0.6)); /* Brilho neon nos caracteres */
-    }
-
-    .crt-overlay {
-      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-      z-index: 2; pointer-events: none;
-      background: linear-gradient(rgba(0, 20, 5, 0) 50%, rgba(0, 0, 0, 0.35) 50%);
-      background-size: 100% 4px;
-      box-shadow: inset 0 0 100px rgba(0, 255, 65, 0.1), inset 0 0 140px rgba(0, 0, 0, 0.8);
-    }
-
-    /* --- LAYOUT ESTILO VS CODE --- */
-    .terminal-window {
-      position: relative; z-index: 10;
-      width: 80vw; height: 80vh;
-      background: var(--window-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      box-shadow: 0 0 40px rgba(0, 255, 65, 0.25);
-      backdrop-filter: blur(6px);
-      display: flex; flex-direction: column; overflow: hidden;
-    }
-
-    /* BARRA DE MENU SUPERIOR */
-    .menu-bar {
-      height: 34px; background: rgba(0, 255, 65, 0.08);
-      border-bottom: 1px solid var(--border-color);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 12px; font-size: 0.75rem; user-select: none;
-    }
-
-    .menu-items { display: flex; gap: 15px; }
-    .menu-item { cursor: pointer; color: var(--primary-dim); font-weight: 500; }
-    .menu-item:hover { color: var(--primary); text-shadow: 0 0 8px var(--primary-glow); }
-
-    /* LAYOUT PRINCIPAL: ACTIVITY BAR + SIDEBAR + WORKSPACE */
-    .vscode-body { display: flex; flex: 1; overflow: hidden; }
-
-    /* ACTIVITY BAR */
-    .activity-bar {
-      width: 48px; background: rgba(0, 5, 2, 0.92);
-      border-right: 1px solid rgba(0, 255, 65, 0.2);
-      display: flex; flex-direction: column; align-items: center; padding-top: 10px; gap: 18px;
-    }
-
-    .activity-icon {
-      font-size: 1.2rem; cursor: pointer; color: var(--primary-dim); opacity: 0.6; transition: 0.2s;
-    }
-
-    .activity-icon:hover, .activity-icon.active {
-      opacity: 1; color: var(--primary); text-shadow: 0 0 10px var(--primary);
-    }
-
-    /* SIDEBAR */
-    .sidebar {
-      width: 220px; background: rgba(0, 8, 3, 0.88);
-      border-right: 1px solid rgba(0, 255, 65, 0.2);
-      display: flex; flex-direction: column; font-size: 0.75rem;
-    }
-
-    .sidebar-header {
-      padding: 8px 10px; font-weight: bold; letter-spacing: 1px;
-      border-bottom: 1px solid rgba(0, 255, 65, 0.15);
-      display: flex; justify-content: space-between; align-items: center;
-    }
-
-    .sidebar-content { flex: 1; overflow-y: auto; padding: 5px; }
-
-    .file-item {
-      padding: 4px 8px; cursor: pointer; border-radius: 3px;
-      display: flex; align-items: center; gap: 6px; color: var(--primary-dim);
-    }
-
-    .file-item:hover, .file-item.active {
-      background: rgba(0, 255, 65, 0.15); color: var(--primary);
-    }
-
-    .sidebar-pane { display: none; }
-    .sidebar-pane.active { display: block; }
-
-    /* EDITOR & PANEL AREA */
-    .main-workspace { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
-    .tabs-bar {
-      display: flex; background: rgba(0, 5, 2, 0.85);
-      border-bottom: 1px solid rgba(0, 255, 65, 0.2); padding: 4px 8px 0 8px; gap: 4px; overflow-x: auto;
-    }
-
-    .tab {
-      padding: 6px 12px; background: rgba(0, 255, 65, 0.04);
-      border: 1px solid rgba(0, 255, 65, 0.2); border-bottom: none;
-      border-radius: 4px 4px 0 0; font-size: 0.75rem; cursor: pointer; color: var(--primary-dim);
-      display: flex; align-items: center; gap: 8px; white-space: nowrap;
-    }
-
-    .tab.active {
-      background: rgba(0, 255, 65, 0.18); color: var(--primary);
-      border-color: var(--primary); font-weight: bold;
-    }
-
-    .tab-close { font-size: 0.65rem; padding: 1px 4px; border-radius: 50%; }
-    .tab-close:hover { background: var(--primary); color: #020804; }
-
-    .editor-pane { flex: 1; display: flex; position: relative; overflow: hidden; }
-
-    .line-numbers {
-      width: 45px; padding: 10px 0; background: rgba(0, 0, 0, 0.6);
-      border-right: 1px solid rgba(0, 255, 65, 0.15); color: var(--primary-dark);
-      font-size: 0.82rem; line-height: 1.5; text-align: right; padding-right: 8px; user-select: none;
-    }
-
-    .editor-container { position: relative; flex: 1; height: 100%; overflow: hidden; }
-
-    textarea#codeEditor, pre#highlightArea {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      padding: 10px; font-family: 'Fira Code', monospace; font-size: 0.85rem;
-      line-height: 1.5; tab-size: 2; white-space: pre; word-wrap: normal;
-      overflow: auto; box-sizing: border-box; border: none; outline: none; margin: 0;
-    }
-
-    textarea#codeEditor {
-      z-index: 2; color: transparent; background: transparent; caret-color: var(--primary); resize: none;
-    }
-
-    pre#highlightArea { z-index: 1; pointer-events: none; background: transparent !important; }
-
-    .minimap {
-      width: 70px; background: rgba(0, 4, 1, 0.85);
-      border-left: 1px solid rgba(0, 255, 65, 0.1);
-      font-size: 2px; line-height: 3px; padding: 4px;
-      overflow: hidden; user-select: none; opacity: 0.6;
-    }
-
-    /* SINTAXE PRISM EM TONS DE VERDE */
-    pre[class*="language-"] { color: var(--primary) !important; text-shadow: none !important; }
-    .token.comment { color: rgba(0, 255, 65, 0.4) !important; font-style: italic; }
-    .token.punctuation { color: #00cc33 !important; }
-    .token.property, .token.number, .token.constant { color: #66ff8c !important; }
-    .token.string, .token.builtin { color: #a3ffbd !important; }
-    .token.operator, .token.keyword { color: #33ff66 !important; font-weight: bold; }
-    .token.function, .token.class-name { color: #b8ffcc !important; }
-
-    /* PAINEL INFERIOR */
-    .bottom-panel {
-      height: 200px; background: rgba(0, 4, 1, 0.95);
-      border-top: 1px solid rgba(0, 255, 65, 0.25);
-      display: flex; flex-direction: column;
-    }
-
-    .panel-tabs {
-      display: flex; background: rgba(0, 10, 4, 0.85);
-      border-bottom: 1px solid rgba(0, 255, 65, 0.15);
-      padding: 0 10px; font-size: 0.7rem; gap: 12px;
-    }
-
-    .panel-tab {
-      padding: 6px 0; cursor: pointer; color: var(--primary-dim); border-bottom: 2px solid transparent;
-    }
-
-    .panel-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: bold; }
-
-    .console-output {
-      flex: 1; padding: 8px 12px; font-size: 0.8rem; overflow-y: auto;
-      display: flex; flex-direction: column; gap: 4px;
-    }
-
-    iframe#htmlPreview {
-      width: 100%; height: 100%; background: #020804; border: none; display: none;
-    }
-
-    .repl-input-group {
-      display: flex; gap: 6px; background: rgba(0, 4, 1, 0.9);
-      border-top: 1px solid rgba(0, 255, 65, 0.15); padding: 4px 8px;
-    }
-
-    .repl-input-group input {
-      flex: 1; background: transparent; border: none; color: var(--primary);
-      font-family: 'Fira Code', monospace; font-size: 0.75rem; outline: none;
-    }
-
-    button, select {
-      background: #000d03; border: 1px solid var(--primary); color: var(--primary);
-      font-family: 'Fira Code', monospace; padding: 3px 8px; border-radius: 3px;
-      outline: none; font-size: 0.72rem; cursor: pointer;
-    }
-
-    button:hover { background: var(--primary); color: #020804; }
-
-    .status-bar {
-      height: 22px; background: rgba(0, 255, 65, 0.08);
-      border-top: 1px solid rgba(0, 255, 65, 0.2);
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 0 12px; font-size: 0.68rem; color: rgba(0, 255, 65, 0.8);
-    }
-
-    .log-line { display: flex; gap: 8px; word-break: break-all; }
-    .log-prefix { color: rgba(0, 255, 65, 0.4); user-select: none; }
-    .log-info { color: var(--primary); }
-    .log-warn { color: #88ffaa; }
-    .log-error { color: #55ff88; text-decoration: underline; }
-    .log-return { color: #b3ffcc; font-style: italic; }
-
-    .search-box {
-      width: 100%; background: #000d03; border: 1px solid var(--primary-dim);
-      color: var(--primary); padding: 4px; margin-bottom: 8px; font-size: 0.75rem;
-    }
-
-    .blink { animation: blink 1s infinite; }
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-  </style>
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
+  <!-- =========================================================
+       BACKGROUND EFFECTS
+  ========================================================== -->
+
+  <div class="background-grid"></div>
+
+  <div class="scanlines"></div>
 
   <div class="crt-overlay"></div>
 
-  <div class="terminal-window">
-    <!-- MENU SUPERIOR -->
-    <div class="menu-bar">
+  <div class="noise-overlay"></div>
+
+  <!-- =========================================================
+       MAIN APPLICATION
+  ========================================================== -->
+
+  <main class="terminal-window" id="app">
+
+    <!-- =======================================================
+         TOP TITLE BAR
+    ======================================================== -->
+
+    <header class="window-titlebar">
+
+      <div class="brand-area">
+
+        <div class="brand-symbol">
+          N
+        </div>
+
+        <div class="brand-text">
+          <strong>NEURAL OS</strong>
+          <span>CODE MATRIX STUDIO</span>
+        </div>
+
+      </div>
+
+      <div class="system-status">
+
+        <span class="status-dot"></span>
+
+        <span>SYSTEM ONLINE</span>
+
+        <span class="separator">│</span>
+
+        <span>CORE v7.0</span>
+
+      </div>
+
+      <div class="window-controls">
+
+        <button
+          type="button"
+          class="window-control"
+          title="Minimizar"
+        >
+          —
+        </button>
+
+        <button
+          type="button"
+          class="window-control"
+          title="Maximizar"
+        >
+          □
+        </button>
+
+        <button
+          type="button"
+          class="window-control close"
+          title="Fechar"
+        >
+          ×
+        </button>
+
+      </div>
+
+    </header>
+
+
+    <!-- =======================================================
+         MAIN MENU
+    ======================================================== -->
+
+    <nav class="menu-bar">
+
       <div class="menu-items">
-        <span class="menu-item" id="menuNewFile">Novo Arquivo</span>
-        <span class="menu-item" id="menuOpenFile">Abrir</span>
-        <span class="menu-item" id="menuSaveFile">Salvar</span>
-        <span class="menu-item" id="menuRun">&#9654; Executar (Ctrl+Enter)</span>
-        <span class="menu-item" id="menuClear">Limpar Console</span>
-      </div>
-      <div>
-        <label style="font-size: 0.7rem; font-weight: bold; margin-right: 4px;">LINGUAGEM:</label>
-        <select id="langSelect">
-          <option value="javascript">JavaScript (ES6+)</option>
-          <option value="html">HTML5 / Live Preview</option>
-          <option value="python">Python 3.11 (WASM)</option>
-          <option value="cpp">C / C++ Engine</option>
-          <option value="csharp">C# Script Engine</option>
-          <option value="lua">Lua 5.3 VM</option>
-          <option value="markdown">Markdown Preview</option>
-          <option value="json">JSON Config</option>
-        </select>
-      </div>
-    </div>
 
-    <!-- CORPO VS CODE -->
-    <div class="vscode-body">
-      <!-- ACTIVITY BAR -->
-      <div class="activity-bar">
-        <div class="activity-icon active" data-pane="explorer" title="Explorador de Arquivos">&#128193;</div>
-        <div class="activity-icon" data-pane="search" title="Buscar no Codigo">&#128065;</div>
-        <div class="activity-icon" data-pane="snippets" title="Snippets & Modelos">&#9881;</div>
+        <button
+          type="button"
+          class="menu-item"
+          id="menuNewFile"
+        >
+          <span class="menu-icon">＋</span>
+          Novo
+        </button>
+
+        <button
+          type="button"
+          class="menu-item"
+          id="menuOpenFile"
+        >
+          <span class="menu-icon">↥</span>
+          Abrir
+        </button>
+
+        <button
+          type="button"
+          class="menu-item"
+          id="menuSaveFile"
+        >
+          <span class="menu-icon">▣</span>
+          Salvar
+        </button>
+
+        <button
+          type="button"
+          class="menu-item run"
+          id="menuRun"
+        >
+          <span>▶</span>
+          Executar
+          <kbd>CTRL</kbd>
+          <kbd>ENTER</kbd>
+        </button>
+
+        <button
+          type="button"
+          class="menu-item"
+          id="menuClear"
+        >
+          <span class="menu-icon">⌫</span>
+          Limpar Console
+        </button>
+
       </div>
 
-      <!-- SIDEBAR -->
-      <div class="sidebar">
-        <!-- PAINEL EXPLORER -->
-        <div class="sidebar-pane active" id="pane-explorer">
+
+      <div class="menu-controls">
+
+        <div class="control-group">
+
+          <label for="tabNameInput">
+            ARQUIVO
+          </label>
+
+          <input
+            type="text"
+            id="tabNameInput"
+            placeholder="arquivo.js"
+            autocomplete="off"
+          >
+
+        </div>
+
+
+        <div class="control-group">
+
+          <label for="langSelect">
+            ENGINE
+          </label>
+
+          <select id="langSelect">
+
+            <option value="javascript">
+              JavaScript ES6+
+            </option>
+
+            <option value="html">
+              HTML5 / Web App
+            </option>
+
+            <option value="python">
+              Python 3.11 WASM
+            </option>
+
+            <option value="cpp">
+              C / C++ Engine
+            </option>
+
+            <option value="csharp">
+              C# Script Engine
+            </option>
+
+            <option value="lua">
+              Lua 5.3 VM
+            </option>
+
+            <option value="markdown">
+              Markdown Preview
+            </option>
+
+            <option value="json">
+              JSON Config
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="control-group">
+
+          <label for="connectTabSelect">
+            LINK
+          </label>
+
+          <div class="link-control">
+
+            <select id="connectTabSelect">
+
+              <option value="">
+                -- Selecionar --
+              </option>
+
+            </select>
+
+            <button
+              type="button"
+              id="btnConnectTab"
+              title="Importar código da aba"
+            >
+              ↳
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </nav>
+
+
+    <!-- =======================================================
+         APPLICATION BODY
+    ======================================================== -->
+
+    <section class="vscode-body">
+
+
+      <!-- =====================================================
+           ACTIVITY BAR
+      ====================================================== -->
+
+      <aside class="activity-bar">
+
+        <button
+          type="button"
+          class="activity-icon active"
+          data-pane="explorer"
+          title="Explorador"
+        >
+          <span>▤</span>
+          <small>FILES</small>
+        </button>
+
+        <button
+          type="button"
+          class="activity-icon"
+          data-pane="search"
+          title="Pesquisar"
+        >
+          <span>⌕</span>
+          <small>SEARCH</small>
+        </button>
+
+        <button
+          type="button"
+          class="activity-icon"
+          data-pane="snippets"
+          title="Snippets"
+        >
+          <span>⌘</span>
+          <small>SNIP</small>
+        </button>
+
+        <div class="activity-spacer"></div>
+
+        <button
+          type="button"
+          class="activity-icon"
+          title="Configurações"
+        >
+          <span>⚙</span>
+          <small>SYS</small>
+        </button>
+
+      </aside>
+
+
+      <!-- =====================================================
+           SIDEBAR
+      ====================================================== -->
+
+      <aside class="sidebar">
+
+
+        <!-- EXPLORER -->
+
+        <section
+          class="sidebar-pane active"
+          id="pane-explorer"
+        >
+
           <div class="sidebar-header">
-            <span>EXPLORADOR</span>
-            <button id="btnSidebarNewFile">+</button>
-          </div>
-          <div class="sidebar-content" id="fileTree"></div>
-        </div>
 
-        <!-- PAINEL BUSCA -->
-        <div class="sidebar-pane" id="pane-search">
-          <div class="sidebar-header"><span>BUSCAR</span></div>
-          <div class="sidebar-content">
-            <input type="text" id="searchInput" class="search-box" placeholder="Localizar no arquivo...">
-            <div id="searchResults" style="font-size: 0.7rem; color: var(--primary-dim);"></div>
-          </div>
-        </div>
+            <div>
 
-        <!-- PAINEL SNIPPETS -->
-        <div class="sidebar-pane" id="pane-snippets">
-          <div class="sidebar-header"><span>SNIPPETS</span></div>
-          <div class="sidebar-content">
-            <div class="file-item" onclick="insertSnippet('fetch')">+ Fetch API Template</div>
-            <div class="file-item" onclick="insertSnippet('class')">+ ES6 Class Template</div>
-            <div class="file-item" onclick="insertSnippet('async')">+ Async/Await Pattern</div>
-          </div>
-        </div>
-      </div>
+              <span class="sidebar-title">
+                EXPLORADOR
+              </span>
 
-      <!-- WORKSPACE -->
-      <div class="main-workspace">
-        <div class="tabs-bar" id="tabsBar"></div>
+              <span class="sidebar-subtitle">
+                WORKSPACE
+              </span>
 
-        <div class="editor-pane">
-          <div class="line-numbers" id="lineNumbers">1</div>
-          <div class="editor-container">
-            <textarea id="codeEditor" spellcheck="false"></textarea>
-            <pre id="highlightArea"><code class="language-javascript" id="highlightCode"></code></pre>
-          </div>
-          <div class="minimap" id="minimap"></div>
-        </div>
-
-        <!-- PANEL INFERIOR -->
-        <div class="bottom-panel">
-          <div class="panel-tabs">
-            <span class="panel-tab active" id="tabTerminal">TERMINAL / CONSOLE</span>
-            <span class="panel-tab" id="tabOutput">PROBLEMAS (0)</span>
-          </div>
-
-          <div class="console-output" id="consoleOutput">
-            <div id="logContent">
-              <div class="log-line log-info"><span class="log-prefix">></span> Matrix Code Studio v5.0 Inicializado.<span class="blink">_</span></div>
             </div>
+
+            <button
+              type="button"
+              id="btnSidebarNewFile"
+              title="Criar novo arquivo"
+            >
+              ＋
+            </button>
+
           </div>
 
-          <iframe id="htmlPreview"></iframe>
 
-          <div class="repl-input-group">
-            <span style="font-size: 0.75rem; color: var(--primary); align-self: center;">&gt;</span>
-            <input type="text" id="replInput" placeholder="Executar comando REPL instantaneo...">
-            <button id="btnSendRepl">Enviar</button>
+          <div class="workspace-label">
+
+            <span class="tree-arrow">▼</span>
+
+            <span>NEURAL_WORKSPACE</span>
+
           </div>
+
+
+          <div
+            class="sidebar-content"
+            id="fileTree"
+          ></div>
+
+
+          <div class="sidebar-footer">
+
+            <span class="pulse-dot"></span>
+
+            <span>WORKSPACE READY</span>
+
+          </div>
+
+        </section>
+
+
+        <!-- SEARCH -->
+
+        <section
+          class="sidebar-pane"
+          id="pane-search"
+        >
+
+          <div class="sidebar-header">
+
+            <div>
+
+              <span class="sidebar-title">
+                PESQUISA
+              </span>
+
+              <span class="sidebar-subtitle">
+                GLOBAL SEARCH
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="sidebar-content">
+
+            <div class="search-wrapper">
+
+              <span>⌕</span>
+
+              <input
+                type="text"
+                id="searchInput"
+                class="search-box"
+                placeholder="Localizar no código..."
+              >
+
+            </div>
+
+            <div id="searchResults"></div>
+
+          </div>
+
+        </section>
+
+
+        <!-- SNIPPETS -->
+
+        <section
+          class="sidebar-pane"
+          id="pane-snippets"
+        >
+
+          <div class="sidebar-header">
+
+            <div>
+
+              <span class="sidebar-title">
+                SNIPPETS
+              </span>
+
+              <span class="sidebar-subtitle">
+                CODE PATTERNS
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="sidebar-content">
+
+            <div
+              class="snippet-card"
+              data-snippet="fetch"
+            >
+
+              <div class="snippet-icon">
+                ⇄
+              </div>
+
+              <div>
+
+                <strong>Fetch API</strong>
+
+                <span>HTTP request template</span>
+
+              </div>
+
+            </div>
+
+
+            <div
+              class="snippet-card"
+              data-snippet="class"
+            >
+
+              <div class="snippet-icon">
+                C
+              </div>
+
+              <div>
+
+                <strong>ES6 Class</strong>
+
+                <span>Object oriented template</span>
+
+              </div>
+
+            </div>
+
+
+            <div
+              class="snippet-card"
+              data-snippet="async"
+            >
+
+              <div class="snippet-icon">
+                ∞
+              </div>
+
+              <div>
+
+                <strong>Async / Await</strong>
+
+                <span>Asynchronous pattern</span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+      </aside>
+
+
+      <!-- =====================================================
+           MAIN WORKSPACE
+      ====================================================== -->
+
+      <section class="main-workspace">
+
+
+        <!-- TABS -->
+
+        <div class="tabs-container">
+
+          <div
+            class="tabs-bar"
+            id="tabsBar"
+          ></div>
+
+          <div class="tabs-actions">
+
+            <button
+              type="button"
+              title="Novo arquivo"
+            >
+              ＋
+            </button>
+
+            <button
+              type="button"
+              title="Mais opções"
+            >
+              ⋮
+            </button>
+
+          </div>
+
         </div>
-      </div>
-    </div>
 
-    <!-- STATUS BAR -->
-    <div class="status-bar">
-      <div id="statusInfo">Linha: 1 | Coluna: 1 | Caracteres: 0</div>
-      <div id="statusExecution">Tempo: 0ms</div>
-      <div>UTF-8 | WASM_CORE: READY</div>
-    </div>
-  </div>
+
+        <!-- SPLIT VIEW -->
+
+        <div class="split-view">
+
+
+          <!-- =================================================
+               EDITOR
+          ================================================== -->
+
+          <section class="editor-section">
+
+
+            <div class="editor-toolbar">
+
+              <div class="breadcrumb">
+
+                <span>NEURAL_WORKSPACE</span>
+
+                <span>/</span>
+
+                <strong id="breadcrumbFile">
+                  arquivo.js
+                </strong>
+
+              </div>
+
+
+              <div class="editor-actions">
+
+                <span class="editor-engine">
+                  JS
+                </span>
+
+                <button
+                  type="button"
+                  title="Formatar"
+                >
+                  ✧
+                </button>
+
+                <button
+                  type="button"
+                  title="Mais opções"
+                >
+                  ⋮
+                </button>
+
+              </div>
+
+            </div>
+
+
+            <!-- EDITOR -->
+
+            <div class="editor-pane">
+
+
+              <div
+                class="line-numbers"
+                id="lineNumbers"
+              >
+                1
+              </div>
+
+
+              <div class="editor-container">
+
+                <textarea
+                  id="codeEditor"
+                  spellcheck="false"
+                  autocapitalize="off"
+                  autocomplete="off"
+                  autocorrect="off"
+                  aria-label="Editor de código"
+                ></textarea>
+
+
+                <pre
+                  id="highlightArea"
+                  aria-hidden="true"
+                ><code
+                  class="language-javascript"
+                  id="highlightCode"
+                ></code></pre>
+
+
+                <div class="editor-corner">
+                  <span></span>
+                  <span></span>
+                </div>
+
+              </div>
+
+
+              <!-- MINIMAP -->
+
+              <div
+                class="minimap"
+                id="minimap"
+              ></div>
+
+            </div>
+
+
+            <!-- =================================================
+                 TERMINAL
+            ================================================== -->
+
+            <section class="bottom-panel">
+
+
+              <div class="panel-header">
+
+                <div class="panel-tabs">
+
+                  <button
+                    type="button"
+                    class="panel-tab active"
+                    id="tabTerminal"
+                  >
+                    TERMINAL
+                  </button>
+
+                  <button
+                    type="button"
+                    class="panel-tab"
+                  >
+                    OUTPUT
+                  </button>
+
+                  <button
+                    type="button"
+                    class="panel-tab"
+                  >
+                    PROBLEMS
+                  </button>
+
+                </div>
+
+
+                <div class="panel-status">
+
+                  <span class="pulse-dot"></span>
+
+                  CONSOLE ONLINE
+
+                </div>
+
+              </div>
+
+
+              <div
+                class="console-output"
+                id="consoleOutput"
+              >
+
+                <div id="logContent">
+
+                  <div class="log-line log-system">
+
+                    <span class="log-time">
+                      [SYSTEM]
+                    </span>
+
+                    <span>
+                      NEURAL CONSOLE INITIALIZED
+                    </span>
+
+                  </div>
+
+
+                  <div class="log-line log-info">
+
+                    <span class="log-prefix">
+                      &gt;
+                    </span>
+
+                    <span>
+                      Live Preview ativo no painel lateral.
+                    </span>
+
+                    <span class="blink">
+                      _
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+
+              <!-- REPL -->
+
+              <div class="repl-input-group">
+
+                <span class="repl-prompt">
+                  NEURAL&gt;
+                </span>
+
+                <input
+                  type="text"
+                  id="replInput"
+                  placeholder="Executar expressão JS rápida..."
+                  autocomplete="off"
+                  spellcheck="false"
+                >
+
+                <button
+                  type="button"
+                  id="btnSendRepl"
+                >
+                  EXECUTAR
+                </button>
+
+              </div>
+
+            </section>
+
+          </section>
+
+
+          <!-- DIVISOR -->
+
+          <div
+            class="split-divider"
+            title="Redimensionar painel"
+          >
+            <span></span>
+          </div>
+
+
+          <!-- =================================================
+               LIVE PREVIEW
+          ================================================== -->
+
+          <section class="preview-section">
+
+
+            <div class="preview-header">
+
+
+              <div class="preview-title">
+
+                <span class="preview-eye">
+                  ◉
+                </span>
+
+                <div>
+
+                  <strong>
+                    LIVE PREVIEW
+                  </strong>
+
+                  <small>
+                    REAL-TIME RENDER ENGINE
+                  </small>
+
+                </div>
+
+              </div>
+
+
+              <div class="preview-controls">
+
+                <span
+                  class="preview-state"
+                  id="previewState"
+                >
+                  READY
+                </span>
+
+                <button
+                  type="button"
+                  id="btnAutoRefresh"
+                  class="toggle-btn active"
+                >
+                  AUTO-SYNC
+                </button>
+
+                <button
+                  type="button"
+                  title="Recarregar preview"
+                >
+                  ↻
+                </button>
+
+              </div>
+
+            </div>
+
+
+            <div class="preview-body">
+
+              <div class="preview-grid"></div>
+
+              <iframe
+                id="livePreviewFrame"
+                sandbox="allow-scripts allow-modals allow-same-origin"
+                title="Live Preview"
+              ></iframe>
+
+              <div class="preview-overlay">
+
+                <span class="preview-corner top-left"></span>
+                <span class="preview-corner top-right"></span>
+                <span class="preview-corner bottom-left"></span>
+                <span class="preview-corner bottom-right"></span>
+
+              </div>
+
+            </div>
+
+
+            <div class="preview-footer">
+
+              <span>
+                ● RENDER
+              </span>
+
+              <span>
+                SANDBOX
+              </span>
+
+              <span>
+                WASM READY
+              </span>
+
+            </div>
+
+          </section>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+    <!-- =======================================================
+         STATUS BAR
+    ======================================================== -->
+
+    <footer class="status-bar">
+
+      <div class="status-left">
+
+        <span class="status-item success">
+          <span class="status-dot"></span>
+          ONLINE
+        </span>
+
+        <span class="status-item">
+          UTF-8
+        </span>
+
+        <span class="status-item">
+          LF
+        </span>
+
+        <span class="status-item">
+          JavaScript
+        </span>
+
+      </div>
+
+
+      <div
+        id="statusInfo"
+        class="status-center"
+      >
+        Linha: 1 | Coluna: 1 | Caracteres: 0
+      </div>
+
+
+      <div class="status-right">
+
+        <span id="statusExecution">
+          Tempo: 0ms
+        </span>
+
+        <span>
+          LIVE PREVIEW
+        </span>
+
+        <span class="status-ready">
+          READY
+        </span>
+
+      </div>
+
+    </footer>
+
+  </main>
+
+
+  <!-- =========================================================
+       MATRIX CANVAS
+  ========================================================== -->
 
   <canvas id="matrixCanvas"></canvas>
-  <input type="file" id="fileInput" style="display: none;">
 
-  <script>
-    /* --- MATRIX BACKGROUND ENGINE (MELHORADA & MAIS VISÍVEL) --- */
-    const canvas = document.getElementById('matrixCanvas');
-    const ctx = canvas.getContext('2d');
 
-    function resizeCanvas() { 
-      canvas.width = window.innerWidth; 
-      canvas.height = window.innerHeight; 
-    }
-    resizeCanvas();
+  <!-- FILE INPUT -->
 
-    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ<>[]{}/*=+#$@';
-    const fontSize = 15;
-    let columns = Math.floor(canvas.width / fontSize);
-    let drops = Array(columns).fill(0).map(() => Math.floor(Math.random() * -100));
+  <input
+    type="file"
+    id="fileInput"
+    hidden
+  >
 
-    window.addEventListener('resize', () => {
-      resizeCanvas();
-      columns = Math.floor(canvas.width / fontSize);
-      drops = Array(columns).fill(0).map(() => Math.floor(Math.random() * -100));
-    });
 
-    function drawRain() {
-      // Fundo semi-transparente mais leve para dar mais rastro e visibilidade
-      ctx.fillStyle = 'rgba(2, 8, 4, 0.12)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.font = 'bold ' + fontSize + 'px "Fira Code", monospace';
+  <!-- =========================================================
+       MAIN SCRIPT
+  ========================================================== -->
 
-      for (let i = 0; i < drops.length; i++) {
-        const text = chars.charAt(Math.floor(Math.random() * chars.length));
-        const x = i * fontSize;
-        const y = drops[i] * fontSize;
+  <script src="script.js"></script>
 
-        // Cabeça da gota (mais brilhante)
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(text, x, y);
-
-        // Corpo da gota em verde Matrix vibrante
-        ctx.fillStyle = '#00ff41';
-        ctx.fillText(text, x, y - fontSize);
-
-        if (y > canvas.height && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++;
-      }
-    }
-    setInterval(drawRain, 33);
-
-    /* --- GERENCIAMENTO DE ARQUIVOS E SISTEMA DE ABAS --- */
-    const codeTemplates = {
-      javascript: `// JavaScript ES6 Environment\nasync function init() {\n  console.log("Sistema Neural Operacional");\n}\ninit();`,
-      html: `<!-- HTML Live Preview -->\n<style>\n  body { background: #020804; color: #00ff41; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; }\n</style>\n<h1>MATRIX CODE STUDIO</h1>`,
-      python: `# Python WASM\ndef run():\n    print("Executando Python Core")\nrun()`,
-      cpp: `// C++ Engine\n#include <iostream>\nusing namespace std;\nint main() {\n    cout << "C++ Compilado!" << endl;\n    return 0;\n}`,
-      csharp: `using System;\npublic class Program {\n    public static void Main() {\n        Console.WriteLine("C# Engine Active");\n    }\n}\nProgram.Main();`,
-      lua: `-- Lua VM\nprint("Lua Script Operacional")`,
-      markdown: `# Documentacao\n> Teste de visualizacao **Markdown**`,
-      json: `{\n  "appName": "Matrix Studio",\n  "version": "5.0"\n}`
-    };
-
-    let files = [
-      { id: 1, name: 'index.js', lang: 'javascript', code: codeTemplates.javascript },
-      { id: 2, name: 'style.html', lang: 'html', code: codeTemplates.html }
-    ];
-    let activeFileId = 1;
-
-    const tabsBar = document.getElementById('tabsBar');
-    const fileTree = document.getElementById('fileTree');
-    const codeEditor = document.getElementById('codeEditor');
-    const highlightCode = document.getElementById('highlightCode');
-    const lineNumbers = document.getElementById('lineNumbers');
-    const minimap = document.getElementById('minimap');
-    const langSelect = document.getElementById('langSelect');
-    const statusInfo = document.getElementById('statusInfo');
-
-    function renderExplorer() {
-      fileTree.innerHTML = '';
-      files.forEach(file => {
-        const item = document.createElement('div');
-        item.className = `file-item ${file.id === activeFileId ? 'active' : ''}`;
-        item.innerHTML = `&#128462; ${file.name}`;
-        item.onclick = () => switchFile(file.id);
-        fileTree.appendChild(item);
-      });
-    }
-
-    function renderTabs() {
-      tabsBar.innerHTML = '';
-      files.forEach(file => {
-        const el = document.createElement('div');
-        el.className = `tab ${file.id === activeFileId ? 'active' : ''}`;
-        el.innerHTML = `<span>${file.name}</span> <span class="tab-close" data-id="${file.id}">\u00D7</span>`;
-        el.addEventListener('click', (e) => {
-          if (!e.target.classList.contains('tab-close')) switchFile(file.id);
-        });
-        tabsBar.appendChild(el);
-      });
-
-      document.querySelectorAll('.tab-close').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          closeFile(parseInt(btn.getAttribute('data-id')));
-        };
-      });
-    }
-
-    function switchFile(id) {
-      const current = files.find(f => f.id === activeFileId);
-      if (current) current.code = codeEditor.value;
-
-      activeFileId = id;
-      const target = files.find(f => f.id === activeFileId);
-      codeEditor.value = target.code;
-      langSelect.value = target.lang;
-      renderTabs();
-      renderExplorer();
-      updateEditor();
-    }
-
-    function closeFile(id) {
-      if (files.length === 1) return;
-      files = files.filter(f => f.id !== id);
-      if (activeFileId === id) activeFileId = files[0].id;
-      switchFile(activeFileId);
-    }
-
-    function createNewFile() {
-      const id = Date.now();
-      files.push({ id, name: `file_${files.length + 1}.js`, lang: 'javascript', code: '// Novo Codigo\n' });
-      switchFile(id);
-    }
-
-    document.getElementById('btnSidebarNewFile').onclick = createNewFile;
-    document.getElementById('menuNewFile').onclick = createNewFile;
-
-    /* --- SIDEBAR SWAPPING --- */
-    document.querySelectorAll('.activity-icon').forEach(icon => {
-      icon.onclick = () => {
-        document.querySelectorAll('.activity-icon').forEach(i => i.classList.remove('active'));
-        document.querySelectorAll('.sidebar-pane').forEach(p => p.classList.remove('active'));
-        icon.classList.add('active');
-        document.getElementById(`pane-${icon.getAttribute('data-pane')}`).classList.add('active');
-      };
-    });
-
-    /* --- EDITOR & SYNTAX HIGHLIGHTING (SUPORTE A TROCA MANUAL) --- */
-    function updateEditor() {
-      const code = codeEditor.value;
-      highlightCode.textContent = code;
-      
-      const langMap = { 
-        javascript: 'javascript', 
-        python: 'python', 
-        cpp: 'cpp', 
-        csharp: 'csharp', 
-        html: 'markup',
-        lua: 'lua',
-        markdown: 'markdown',
-        json: 'json'
-      };
-      
-      highlightCode.className = `language-${langMap[langSelect.value] || 'javascript'}`;
-      Prism.highlightElement(highlightCode);
-
-      const lines = code.split('\n').length;
-      lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
-      minimap.textContent = code;
-
-      const pos = codeEditor.selectionStart;
-      const lineNum = code.substring(0, pos).split('\n').length;
-      const colNum = pos - code.substring(0, pos).lastIndexOf('\n');
-      statusInfo.textContent = `Linha: ${lineNum} | Coluna: ${colNum} | Caracteres: ${code.length}`;
-    }
-
-    codeEditor.addEventListener('input', () => {
-      const file = files.find(f => f.id === activeFileId);
-      if (file) file.code = codeEditor.value;
-      updateEditor();
-    });
-
-    codeEditor.addEventListener('scroll', () => {
-      document.getElementById('highlightArea').scrollTop = codeEditor.scrollTop;
-      document.getElementById('highlightArea').scrollLeft = codeEditor.scrollLeft;
-      lineNumbers.scrollTop = codeEditor.scrollTop;
-    });
-
-    /* ALTERAÇÃO DA LINGUAGEM MANUALMENTE */
-    langSelect.addEventListener('change', (e) => {
-      const selectedLang = e.target.value;
-      const file = files.find(f => f.id === activeFileId);
-      
-      if (file) {
-        file.lang = selectedLang;
-      }
-      
-      // Atualiza o realce visual com a nova linguagem selecionada
-      updateEditor();
-    });
-
-    /* --- BUSCA NO CÓDIGO --- */
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      const resultsEl = document.getElementById('searchResults');
-      if (!query) { resultsEl.innerHTML = ''; return; }
-      
-      const lines = codeEditor.value.split('\n');
-      let matches = [];
-      lines.forEach((line, idx) => {
-        if (line.toLowerCase().includes(query)) matches.push(`L${idx + 1}: ${line.trim()}`);
-      });
-      resultsEl.innerHTML = matches.length ? matches.join('<br>') : 'Nenhuma ocorrencia encontrada.';
-    });
-
-    /* --- SNIPPETS --- */
-    function insertSnippet(type) {
-      let snippet = '';
-      if (type === 'fetch') snippet = `fetch('https://api.example.com/data')\n  .then(res => res.json())\n  .then(data => console.log(data));`;
-      if (type === 'class') snippet = `class SystemCore {\n  constructor(name) {\n    this.name = name;\n  }\n}`;
-      if (type === 'async') snippet = `async function executeTask() {\n  try {\n    // Task code\n  } catch (err) {\n    console.error(err);\n  }\n}`;
-      
-      codeEditor.value += `\n${snippet}\n`;
-      updateEditor();
-    }
-
-    /* --- EXECUÇÃO POLYGLOT --- */
-    const logContent = document.getElementById('logContent');
-    const consoleOutput = document.getElementById('consoleOutput');
-    const htmlPreview = document.getElementById('htmlPreview');
-    const execTimeEl = document.getElementById('statusExecution');
-    let pyodideInstance = null;
-
-    function printToTerminal(type, args) {
-      const line = document.createElement('div');
-      line.className = `log-line log-${type}`;
-      const prefix = document.createElement('span');
-      prefix.className = 'log-prefix';
-      prefix.textContent = type === 'return' ? '<' : '>';
-      const content = document.createElement('span');
-      content.textContent = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ');
-      line.appendChild(prefix); line.appendChild(content);
-      logContent.appendChild(line);
-      consoleOutput.scrollTop = consoleOutput.scrollHeight;
-    }
-
-    function clearConsole() { logContent.innerHTML = ''; }
-    document.getElementById('menuClear').onclick = clearConsole;
-
-    async function executeCode() {
-      const lang = langSelect.value;
-      const code = codeEditor.value;
-      const startTime = performance.now();
-
-      if (lang === 'html' || lang === 'markdown') {
-        consoleOutput.style.display = 'none'; htmlPreview.style.display = 'block';
-        htmlPreview.srcdoc = lang === 'html' ? code : `<style>body{background:#020804;color:#00ff41;font-family:monospace;padding:20px;}</style>${marked.parse(code)}`;
-        return;
-      }
-
-      consoleOutput.style.display = 'flex'; htmlPreview.style.display = 'none';
-      clearConsole();
-      printToTerminal('info', [`[BUILD] Executando ${lang.toUpperCase()}...`]);
-
-      try {
-        if (lang === 'javascript') {
-          const fn = new Function('console', `return (async () => { ${code} })();`);
-          const res = await fn({ log: (...args) => printToTerminal('info', args), error: (...args) => printToTerminal('error', args) });
-          if (res !== undefined) printToTerminal('return', [res]);
-        }
-        else if (lang === 'python') {
-          if (!pyodideInstance) { printToTerminal('warn', ['[+] Carregando Pyodide WASM...']); pyodideInstance = await loadPyodide(); }
-          pyodideInstance.setStdout({ batched: (str) => printToTerminal('info', [str]) });
-          const res = await pyodideInstance.runPythonAsync(code);
-          if (res !== undefined) printToTerminal('return', [res]);
-        }
-        else if (lang === 'cpp') {
-          let outputBuffer = "";
-          JSCPP.run(code, "", { stdio: { write: (str) => outputBuffer += str } });
-          outputBuffer.split('\n').filter(Boolean).forEach(line => printToTerminal('info', [line]));
-        }
-        else if (lang === 'lua') {
-          fengari.load(code)();
-        }
-      } catch (err) {
-        printToTerminal('error', [`ExecutionError: ${err.message}`]);
-      }
-
-      execTimeEl.textContent = `Tempo: ${Math.round(performance.now() - startTime)}ms`;
-    }
-
-    document.getElementById('menuRun').onclick = executeCode;
-
-    document.getElementById('btnSendRepl').onclick = () => {
-      const input = document.getElementById('replInput');
-      if (!input.value.trim()) return;
-      printToTerminal('info', [`REPL > ${input.value}`]);
-      try {
-        const res = eval(input.value);
-        printToTerminal('return', [res]);
-      } catch (err) {
-        printToTerminal('error', [err.message]);
-      }
-      input.value = '';
-    };
-
-    /* IMPORT / EXPORT */
-    document.getElementById('menuSaveFile').onclick = () => {
-      const file = files.find(f => f.id === activeFileId);
-      const blob = new Blob([codeEditor.value], { type: 'text/plain;charset=utf-8' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = file ? file.name : 'script.js';
-      a.click();
-    };
-
-    document.getElementById('menuOpenFile').onclick = () => document.getElementById('fileInput').click();
-
-    document.getElementById('fileInput').onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const id = Date.now();
-        files.push({ id, name: file.name, lang: 'javascript', code: evt.target.result });
-        switchFile(id);
-      };
-      reader.readAsText(file, 'UTF-8');
-    };
-
-    /* TECLAS DE ATALHO DO VS CODE */
-    codeEditor.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); executeCode(); }
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        const start = codeEditor.selectionStart, end = codeEditor.selectionEnd;
-        codeEditor.value = codeEditor.value.substring(0, start) + "  " + codeEditor.value.substring(end);
-        codeEditor.selectionStart = codeEditor.selectionEnd = start + 2;
-        updateEditor();
-      }
-    });
-
-    renderExplorer();
-    renderTabs();
-    updateEditor();
-  </script>
 </body>
 </html>
